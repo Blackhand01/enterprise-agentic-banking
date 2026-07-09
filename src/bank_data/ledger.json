@@ -1,0 +1,142 @@
+{
+  "ledger_id": "ledger_stefano_001",
+  "user_id": "usr_stefano_001",
+  "currency": "EUR",
+  "as_of": "2026-07-09T09:00:00+02:00",
+  "accounts": [
+    {
+      "account_id": "acc_checking_001",
+      "user_id": "usr_stefano_001",
+      "name": "Checking",
+      "type": "current_account",
+      "iban_alias": "CHECKING-001",
+      "balance": 4250.0,
+      "available_balance": 4250.0
+    },
+    {
+      "account_id": "acc_emergency_fund_001",
+      "user_id": "usr_stefano_001",
+      "name": "Emergency_Fund",
+      "type": "savings_pot",
+      "iban_alias": "SAVINGS-EMERGENCY-001",
+      "balance": 3000.0,
+      "target_balance": 10000.0
+    }
+  ],
+  "transactions": [
+    {
+      "transaction_id": "txn_20260708_salary_001",
+      "account_id": "acc_checking_001",
+      "date": "2026-07-08",
+      "merchant": "Tata Innovation Hub Payroll",
+      "amount": 3200.0,
+      "category": "stipendio"
+    },
+    {
+      "transaction_id": "txn_20260707_rent_001",
+      "account_id": "acc_checking_001",
+      "date": "2026-07-07",
+      "merchant": "Nordic Homes Rent",
+      "amount": -950.0,
+      "category": "affitto"
+    },
+    {
+      "transaction_id": "txn_20260706_grocery_001",
+      "account_id": "acc_checking_001",
+      "date": "2026-07-06",
+      "merchant": "Fresh Market",
+      "amount": -86.4,
+      "category": "spesa"
+    },
+    {
+      "transaction_id": "txn_20260705_utility_001",
+      "account_id": "acc_checking_001",
+      "date": "2026-07-05",
+      "merchant": "Nordic Energy",
+      "amount": -132.2,
+      "category": "bollette"
+    },
+    {
+      "transaction_id": "txn_20260704_sport_001",
+      "account_id": "acc_checking_001",
+      "date": "2026-07-04",
+      "merchant": "ProSki Shop",
+      "amount": -150.0,
+      "category": "sport"
+    },
+    {
+      "transaction_id": "txn_20260703_transport_001",
+      "account_id": "acc_checking_001",
+      "date": "2026-07-03",
+      "merchant": "City Transit",
+      "amount": -48.0,
+      "category": "trasporti"
+    },
+    {
+      "transaction_id": "txn_20260702_subscription_001",
+      "account_id": "acc_checking_001",
+      "date": "2026-07-02",
+      "merchant": "CloudStorage Premium",
+      "amount": -12.99,
+      "category": "abbonamenti"
+    },
+    {
+      "transaction_id": "txn_20260701_restaurant_001",
+      "account_id": "acc_checking_001",
+      "date": "2026-07-01",
+      "merchant": "Riverside Bistro",
+      "amount": -64.5,
+      "category": "ristoranti"
+    },
+    {
+      "transaction_id": "txn_20260630_health_001",
+      "account_id": "acc_checking_001",
+      "date": "2026-06-30",
+      "merchant": "City Medical Clinic",
+      "amount": -220.0,
+      "category": "salute"
+    },
+    {
+      "transaction_id": "txn_20260629_savings_001",
+      "account_id": "acc_checking_001",
+      "date": "2026-06-29",
+      "merchant": "Emergency_Fund",
+      "amount": -250.0,
+      "category": "risparmio"
+    },
+    {
+      "transaction_id": "txn_20260629_savings_002",
+      "account_id": "acc_emergency_fund_001",
+      "date": "2026-06-29",
+      "merchant": "Checking",
+      "amount": 250.0,
+      "category": "risparmio"
+    },
+    {
+      "transaction_id": "txn_20260628_sport_001",
+      "account_id": "acc_checking_001",
+      "date": "2026-06-28",
+      "merchant": "Trail Running Store",
+      "amount": -100.0,
+      "category": "sport"
+    }
+  ],
+  "scheduled_transactions": [
+    {
+      "scheduled_id": "sch_20260715_internet_001",
+      "account_id": "acc_checking_001",
+      "date": "2026-07-15",
+      "merchant": "FiberNet",
+      "amount": -39.9,
+      "category": "bollette"
+    },
+    {
+      "scheduled_id": "sch_20260720_creditcard_001",
+      "account_id": "acc_checking_001",
+      "date": "2026-07-20",
+      "merchant": "Credit Card Settlement",
+      "amount": -720.0,
+      "category": "carte"
+    }
+  ]
+}

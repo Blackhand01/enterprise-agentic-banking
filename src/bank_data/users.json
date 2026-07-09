@@ -1,0 +1,44 @@
+[
+  {
+    "user_id": "usr_stefano_001",
+    "first_name": "Stefano",
+    "last_name": "Roy",
+    "auth_level": "mfa_verified",
+    "primary_currency": "EUR",
+    "risk_thresholds": {
+      "autonomous_transfer_limit_eur": 500,
+      "step_up_required_above_eur": 1000,
+      "new_beneficiary_requires_approval": true,
+      "external_transfer_requires_approval": true,
+      "shared_account_requires_coapproval": true
+    },
+    "communication_preferences": {
+      "preferred_channel": "in_app",
+      "fallback_channel": "email",
+      "language": "it",
+      "notify_on_agent_proposals": true,
+      "notify_on_autonomous_actions": true,
+      "daily_digest_enabled": false
+    },
+    "autonomy_preferences": {
+      "allow_low_risk_categorization": true,
+      "allow_autonomous_savings_transfer": false,
+      "require_explanation_before_approval": true,
+      "pause_agent_actions": false
+    },
+    "trusted_beneficiaries": [
+      {
+        "beneficiary_id": "bene_emergency_fund",
+        "name": "Emergency_Fund",
+        "type": "internal_savings_pot",
+        "is_existing_target": true
+      },
+      {
+        "beneficiary_id": "bene_landlord",
+        "name": "Nordic Homes Rent",
+        "type": "external_merchant",
+        "is_existing_target": true
+      }
+    ]
+  }
+]
