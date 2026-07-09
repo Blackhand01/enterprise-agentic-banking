@@ -18,12 +18,17 @@ except ImportError:  # Allows tests/imports without the optional dependency.
 
 try:
     from .chat_history import SlidingWindowChatHistory
+    from .guardrails import (
+        response_has_customer_unsafe_content,
+        sanitize_customer_response,
+    )
     from .prompts import build_system_prompt
     from .retrieval import PolicyRetriever
     from .schemas import groq_tool_definitions
     from .tools import BankingToolExecutor
 except ImportError:  # Allows direct script-style imports during prototyping.
     from chat_history import SlidingWindowChatHistory
+    from guardrails import response_has_customer_unsafe_content, sanitize_customer_response
     from prompts import build_system_prompt
     from retrieval import PolicyRetriever
     from schemas import groq_tool_definitions
@@ -42,12 +47,13 @@ class BankingAgent:
         model: str = DEFAULT_MODEL,
         history_window: int = 10,
         policy_db_path: str | Path = "policyDB.json",
-        ledger_path: str | Path = "ledger.json",
+        db_path: str | Path = "banking.db",
+        ledger_seed_path: str | Path = "ledger.json",
     ) -> None:
         self.model = model
         self.chat_history = SlidingWindowChatHistory(history_window)
         self.policy_retriever = PolicyRetriever(policy_db_path)
-        self.tool_executor = BankingToolExecutor(ledger_path)
+        self.tool_executor = BankingToolExecutor(db_path, ledger_seed_path)
         self.groq_client = groq_client or self._build_groq_client()
 
     @property
@@ -141,8 +147,92 @@ class BankingAgent:
 
     def _store_and_return_assistant_text(self, assistant_message: Any) -> str:
         final_text = getattr(assistant_message, "content", None) or ""
+        final_text = self._customer_safe_text(final_text)
         self._append_message({"role": "assistant", "content": final_text})
         return final_text
+
+    def _customer_safe_text(self, text: str) -> str:
+        if not response_has_customer_unsafe_content(text):
+            return text
+
+        tool_fallback = self._format_latest_tool_result_for_customer()
+        if tool_fallback:
+            return tool_fallback
+
+        return sanitize_customer_response(text)
+
+    def _format_latest_tool_result_for_customer(self) -> str | None:
+        for message in reversed(self.history):
+            if message.get("role") != "tool":
+                continue
+            tool_name = message.get("name")
+            payload = self._parse_tool_payload(message.get("content"))
+            if tool_name == "get_balance_summary":
+                return self._format_balance_summary(payload)
+            if tool_name == "get_customer_context":
+                balance_summary = payload.get("balance_summary", {})
+                return self._format_balance_summary(balance_summary)
+            if tool_name == "fetch_transactions":
+                return self._format_transaction_summary(payload)
+            return None
+        return None
+
+    @staticmethod
+    def _parse_tool_payload(content: Any) -> dict[str, Any]:
+        try:
+            parsed = json.loads(content or "{}")
+        except json.JSONDecodeError:
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+
+    @staticmethod
+    def _format_balance_summary(payload: dict[str, Any]) -> str | None:
+        if payload.get("status") != "OK":
+            return None
+
+        currency = payload.get("currency", "EUR")
+        accounts = payload.get("accounts", [])
+        total = payload.get("total_balance")
+        if total is None or not isinstance(accounts, list):
+            return None
+
+        account_parts = []
+        for account in accounts:
+            name = account.get("name")
+            balance = account.get("balance")
+            if name is None or balance is None:
+                continue
+            account_parts.append(
+                f"{name}: {BankingAgent._format_money(float(balance), currency)}"
+            )
+
+        details = "; ".join(account_parts)
+        return (
+            "In questa banca hai "
+            f"{BankingAgent._format_money(float(total), currency)} in totale. "
+            f"Dettaglio conti: {details}."
+        )
+
+    @staticmethod
+    def _format_transaction_summary(payload: dict[str, Any]) -> str | None:
+        if payload.get("status") != "OK":
+            return None
+
+        category = payload.get("category", "richiesta")
+        transactions = payload.get("transactions", [])
+        if not isinstance(transactions, list):
+            return None
+
+        total = abs(round(sum(float(tx.get("amount", 0)) for tx in transactions), 2))
+        return (
+            f"Ho trovato {len(transactions)} transazioni per la categoria {category}. "
+            f"Il totale considerato e {BankingAgent._format_money(total, 'EUR')}."
+        )
+
+    @staticmethod
+    def _format_money(value: float, currency: str) -> str:
+        formatted = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"{formatted} {currency}"
 
     def _store_assistant_tool_request(self, assistant_message: Any) -> None:
         self._append_message(

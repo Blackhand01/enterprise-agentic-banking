@@ -48,7 +48,7 @@ class PolicyRetriever:
         ]
 
         if not matches:
-            return f"No active policies found for category: {category}"
+            return f"Nessuna policy attiva trovata per categoria: {category}"
 
         formatted: list[str] = []
         for policy in matches:
@@ -61,10 +61,10 @@ class PolicyRetriever:
                 "\n".join(
                     [
                         f"Policy ID: {policy_id}",
-                        f"Title: {title}",
-                        f"Category: {policy.get('category', category)}",
-                        f"Version: {version}",
-                        f"Body: {body}",
+                        f"Titolo: {title}",
+                        f"Categoria: {policy.get('category', category)}",
+                        f"Versione: {version}",
+                        f"Corpo: {body}",
                     ]
                 )
             )

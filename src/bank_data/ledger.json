@@ -3,6 +3,13 @@
   "user_id": "usr_stefano_001",
   "currency": "EUR",
   "as_of": "2026-07-09T09:00:00+02:00",
+  "financial_rule_config": {
+    "profile_id": "balanced_supervisor",
+    "surplus_investment_ratio": 0.25,
+    "minimum_cash_buffer_eur": 750.0,
+    "autonomous_transfer_limit_eur": 500.0,
+    "transfer_rounding_increment_eur": 50.0
+  },
   "accounts": [
     {
       "account_id": "acc_checking_001",
@@ -137,6 +144,164 @@
       "merchant": "Credit Card Settlement",
       "amount": -720.0,
       "category": "carte"
+    }
+  ],
+  "monthly_snapshots": [
+    {
+      "month": "2025-08",
+      "month_label": "Ago 2025",
+      "income_eur": 3100.0,
+      "rent_eur": 930.0,
+      "utilities_eur": 128.0,
+      "groceries_eur": 422.0,
+      "sport_eur": 90.0,
+      "discretionary_eur": 510.0,
+      "savings_transfer_eur": 150.0,
+      "checking_end_balance_eur": 2860.0,
+      "emergency_fund_balance_eur": 1850.0
+    },
+    {
+      "month": "2025-09",
+      "month_label": "Set 2025",
+      "income_eur": 3100.0,
+      "rent_eur": 930.0,
+      "utilities_eur": 121.5,
+      "groceries_eur": 438.0,
+      "sport_eur": 120.0,
+      "discretionary_eur": 480.0,
+      "savings_transfer_eur": 200.0,
+      "checking_end_balance_eur": 2925.0,
+      "emergency_fund_balance_eur": 2050.0
+    },
+    {
+      "month": "2025-10",
+      "month_label": "Ott 2025",
+      "income_eur": 3100.0,
+      "rent_eur": 930.0,
+      "utilities_eur": 135.2,
+      "groceries_eur": 451.0,
+      "sport_eur": 75.0,
+      "discretionary_eur": 545.0,
+      "savings_transfer_eur": 150.0,
+      "checking_end_balance_eur": 3005.0,
+      "emergency_fund_balance_eur": 2200.0
+    },
+    {
+      "month": "2025-11",
+      "month_label": "Nov 2025",
+      "income_eur": 3150.0,
+      "rent_eur": 930.0,
+      "utilities_eur": 149.8,
+      "groceries_eur": 466.0,
+      "sport_eur": 110.0,
+      "discretionary_eur": 620.0,
+      "savings_transfer_eur": 100.0,
+      "checking_end_balance_eur": 2990.0,
+      "emergency_fund_balance_eur": 2300.0
+    },
+    {
+      "month": "2025-12",
+      "month_label": "Dic 2025",
+      "income_eur": 3150.0,
+      "rent_eur": 950.0,
+      "utilities_eur": 168.4,
+      "groceries_eur": 520.0,
+      "sport_eur": 60.0,
+      "discretionary_eur": 780.0,
+      "savings_transfer_eur": 0.0,
+      "checking_end_balance_eur": 2860.0,
+      "emergency_fund_balance_eur": 2300.0
+    },
+    {
+      "month": "2026-01",
+      "month_label": "Gen 2026",
+      "income_eur": 3150.0,
+      "rent_eur": 950.0,
+      "utilities_eur": 176.1,
+      "groceries_eur": 445.0,
+      "sport_eur": 95.0,
+      "discretionary_eur": 430.0,
+      "savings_transfer_eur": 200.0,
+      "checking_end_balance_eur": 3055.0,
+      "emergency_fund_balance_eur": 2500.0
+    },
+    {
+      "month": "2026-02",
+      "month_label": "Feb 2026",
+      "income_eur": 3150.0,
+      "rent_eur": 950.0,
+      "utilities_eur": 164.7,
+      "groceries_eur": 432.0,
+      "sport_eur": 80.0,
+      "discretionary_eur": 410.0,
+      "savings_transfer_eur": 150.0,
+      "checking_end_balance_eur": 3200.0,
+      "emergency_fund_balance_eur": 2650.0
+    },
+    {
+      "month": "2026-03",
+      "month_label": "Mar 2026",
+      "income_eur": 3200.0,
+      "rent_eur": 950.0,
+      "utilities_eur": 142.4,
+      "groceries_eur": 468.0,
+      "sport_eur": 140.0,
+      "discretionary_eur": 460.0,
+      "savings_transfer_eur": 100.0,
+      "checking_end_balance_eur": 3335.0,
+      "emergency_fund_balance_eur": 2750.0
+    },
+    {
+      "month": "2026-04",
+      "month_label": "Apr 2026",
+      "income_eur": 3200.0,
+      "rent_eur": 950.0,
+      "utilities_eur": 118.5,
+      "groceries_eur": 455.0,
+      "sport_eur": 70.0,
+      "discretionary_eur": 520.0,
+      "savings_transfer_eur": 0.0,
+      "checking_end_balance_eur": 3500.0,
+      "emergency_fund_balance_eur": 2750.0
+    },
+    {
+      "month": "2026-05",
+      "month_label": "Mag 2026",
+      "income_eur": 3200.0,
+      "rent_eur": 950.0,
+      "utilities_eur": 109.6,
+      "groceries_eur": 470.0,
+      "sport_eur": 130.0,
+      "discretionary_eur": 490.0,
+      "savings_transfer_eur": 0.0,
+      "checking_end_balance_eur": 3720.0,
+      "emergency_fund_balance_eur": 2750.0
+    },
+    {
+      "month": "2026-06",
+      "month_label": "Giu 2026",
+      "income_eur": 3200.0,
+      "rent_eur": 950.0,
+      "utilities_eur": 125.3,
+      "groceries_eur": 462.0,
+      "sport_eur": 100.0,
+      "discretionary_eur": 450.0,
+      "savings_transfer_eur": 250.0,
+      "checking_end_balance_eur": 3990.0,
+      "emergency_fund_balance_eur": 3000.0
+    },
+    {
+      "month": "2026-07",
+      "month_label": "Lug 2026",
+      "income_eur": 3200.0,
+      "rent_eur": 950.0,
+      "utilities_eur": 172.1,
+      "groceries_eur": 86.4,
+      "sport_eur": 250.0,
+      "discretionary_eur": 125.49,
+      "savings_transfer_eur": 0.0,
+      "checking_end_balance_eur": 4250.0,
+      "emergency_fund_balance_eur": 3000.0
     }
   ]
 }

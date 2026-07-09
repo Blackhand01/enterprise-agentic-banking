@@ -6,7 +6,6 @@
     "auth_level": "mfa_verified",
     "primary_currency": "EUR",
     "risk_thresholds": {
-      "autonomous_transfer_limit_eur": 500,
       "step_up_required_above_eur": 1000,
       "new_beneficiary_requires_approval": true,
       "external_transfer_requires_approval": true,

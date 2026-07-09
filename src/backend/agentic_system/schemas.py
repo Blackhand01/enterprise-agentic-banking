@@ -19,7 +19,14 @@ class FetchTransactionsArgs(BaseModel):
     category: str = Field(
         ...,
         min_length=1,
-        description="Transaction category, e.g. sport, bollette, stipendio.",
+        description="Categoria transazione, ad esempio sport, bollette, stipendio.",
+    )
+    search_query: str | None = Field(
+        default=None,
+        description=(
+            "Filtro testuale opzionale per merchant, descrizione, categoria o data. "
+            "Esempi: ski, ProSki, running."
+        ),
     )
 
     @field_validator("category")
@@ -30,6 +37,20 @@ class FetchTransactionsArgs(BaseModel):
             raise ValueError("category cannot be blank")
         return normalized
 
+    @field_validator("search_query")
+    @classmethod
+    def normalize_search_query(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip().lower()
+        return normalized or None
+
+
+class NoArgs(BaseModel):
+    """Empty argument contract for read-only tools without parameters."""
+
+    model_config = ConfigDict(extra="forbid")
+
 
 class ExecuteTransferArgs(BaseModel):
     """Arguments for the execute_transfer tool."""
@@ -39,12 +60,16 @@ class ExecuteTransferArgs(BaseModel):
     recipient: str = Field(
         ...,
         min_length=1,
-        description="Transfer recipient or savings pot name.",
+        description="Beneficiario del trasferimento o nome del saving pot.",
     )
     amount: float = Field(
         ...,
         gt=0,
-        description="Amount in EUR.",
+        description="Importo in EUR.",
+    )
+    operation_id: str | None = Field(
+        default=None,
+        description="Identificativo idempotente dell'operazione, se disponibile.",
     )
 
     @field_validator("recipient")
@@ -55,8 +80,18 @@ class ExecuteTransferArgs(BaseModel):
             raise ValueError("recipient cannot be blank")
         return normalized
 
+    @field_validator("operation_id")
+    @classmethod
+    def normalize_operation_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
 
 TOOL_ARG_MODELS: dict[str, type[BaseModel]] = {
+    "get_balance_summary": NoArgs,
+    "get_customer_context": NoArgs,
     "fetch_transactions": FetchTransactionsArgs,
     "execute_transfer": ExecuteTransferArgs,
 }
@@ -69,8 +104,31 @@ def groq_tool_definitions() -> list[dict[str, Any]]:
         {
             "type": "function",
             "function": {
+                "name": "get_balance_summary",
+                "description": (
+                    "Recupera dai sistemi bancari locali i conti del cliente, "
+                    "i saldi e il saldo totale in EUR."
+                ),
+                "parameters": NoArgs.model_json_schema(),
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_customer_context",
+                "description": (
+                    "Recupera il contesto cliente verificato: conti, saldi, "
+                    "ultimo stipendio, pagamenti pianificati, transazioni recenti "
+                    "e storico mensile."
+                ),
+                "parameters": NoArgs.model_json_schema(),
+            },
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": "fetch_transactions",
-                "description": "Fetch grounded ledger transactions by category.",
+                "description": "Recupera transazioni grounded dal ledger per categoria.",
                 "parameters": FetchTransactionsArgs.model_json_schema(),
             },
         },
@@ -78,7 +136,7 @@ def groq_tool_definitions() -> list[dict[str, Any]]:
             "type": "function",
             "function": {
                 "name": "execute_transfer",
-                "description": "Submit a transfer request to a recipient or savings pot.",
+                "description": "Invia una richiesta di trasferimento verso un beneficiario o saving pot.",
                 "parameters": ExecuteTransferArgs.model_json_schema(),
             },
         },

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TCS Agentic Bank</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <p class="eyebrow">Prototipo Parte A</p>
+          <h1>TCS Agentic Bank</h1>
+        </div>
+        <div class="top-actions">
+          <span class="chip" id="user-name">Stefano</span>
+          <span class="chip strong" id="auth-level">Contesto MFA</span>
+          <button id="inspector-toggle" class="secondary">Inspector tecnico</button>
+        </div>
+      </header>
+
+      <main class="customer-workspace" id="customer-workspace">
+        <div class="workspace-main">
+          <section class="panel goal-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Obiettivo cliente</p>
+                <h2>Fondo emergenze</h2>
+              </div>
+            </div>
+            <div id="goal-summary" class="goal-summary"></div>
+          </section>
+
+          <section class="panel inbox-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Inbox agente</p>
+                <h2>Azioni proattive da supervisionare</h2>
+              </div>
+            </div>
+            <div id="agent-inbox" class="agent-inbox"></div>
+            <div id="customer-result"></div>
+          </section>
+
+          <section class="panel supervisor-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Cruscotto supervisore</p>
+                <h2>Cashflow storico e previsione prossimi 30 giorni</h2>
+              </div>
+            </div>
+            <div id="cashflow-supervisor" class="cashflow-supervisor"></div>
+          </section>
+        </div>
+
+        <aside class="workspace-sidebar" aria-label="Pannello laterale cliente">
+          <section class="panel glossary-panel">
+            <details open>
+              <summary>Legenda e funzionamento</summary>
+              <div class="glossary-grid">
+                <div>
+                  <strong>Surplus</strong>
+                  <p>Saldo disponibile meno spese note dei prossimi 30 giorni e buffer di sicurezza.</p>
+                </div>
+                <div>
+                  <strong>Limite di rischio</strong>
+                  <p>Operazioni sopra soglia richiedono autenticazione forte.</p>
+                </div>
+                <div>
+                  <strong>Regola prudenziale</strong>
+                  <p>Il sistema propone solo una quota configurabile del surplus.</p>
+                </div>
+              </div>
+              <div id="financial-rules-settings" class="financial-rules-settings"></div>
+            </details>
+          </section>
+
+          <section class="panel event-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Motore eventi</p>
+                <h2>Scenari trigger</h2>
+              </div>
+            </div>
+            <div class="scenario-actions">
+              <button class="secondary scenario-button" data-scenario="salary_arrival">
+                Simula arrivo stipendio
+              </button>
+              <button class="secondary scenario-button" data-scenario="high_unexpected_expense">
+                Simula spesa imprevista alta
+              </button>
+              <button class="secondary scenario-button" data-scenario="unused_subscription">
+                Simula abbonamento inutilizzato
+              </button>
+            </div>
+            <div id="event-result" class="event-result"></div>
+          </section>
+
+          <section class="panel assistant-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Assistente cliente</p>
+                <h2>Chat contestuale</h2>
+              </div>
+            </div>
+            <div class="quick-prompts">
+              <button class="ghost quick-prompt" data-prompt="Quanto ho speso in sport di recente?">
+                Spese sport
+              </button>
+              <button class="ghost quick-prompt" data-prompt="Puoi dirmi il rischio del mio mutuo?">
+                Dati mutuo mancanti
+              </button>
+            </div>
+            <div class="chat-box" id="chat-box"></div>
+            <div class="chat-input">
+              <input
+                id="chat-input"
+                type="text"
+                placeholder="Chiedi dettagli su spese, saldi o proposta."
+              />
+              <button id="chat-button">Chiedi</button>
+            </div>
+          </section>
+
+          <section class="panel deep-dive-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Fonti e storico</p>
+                <h2>Explainability</h2>
+              </div>
+              <button id="deep-dive-toggle" class="secondary small">Apri</button>
+            </div>
+            <div id="deep-dive-content" class="deep-dive-content"></div>
+          </section>
+
+          <section class="panel recent-panel">
+            <details>
+              <summary>
+                <span>
+                  <span class="eyebrow">Ledger aggiornato</span>
+                  <strong>Ultime transazioni</strong>
+                </span>
+              </summary>
+              <div id="recent-transactions" class="recent-transactions"></div>
+            </details>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <aside class="inspector" id="inspector" aria-hidden="true">
+      <div class="inspector-header">
+        <div>
+          <p class="eyebrow">AI Engineering</p>
+          <h2>Pannello di ispezione</h2>
+        </div>
+        <button id="inspector-close" class="ghost small">Nascondi</button>
+      </div>
+
+      <div class="inspector-tabs" role="tablist">
+        <button class="tab active" data-tab="context">Contesto</button>
+        <button class="tab" data-tab="policies">Policy</button>
+        <button class="tab" data-tab="execution">Esecuzione</button>
+        <button class="tab" data-tab="audit">Audit</button>
+        <button class="tab" data-tab="raw">Grezzo</button>
+      </div>
+
+      <div class="inspector-body">
+        <section class="tab-panel active" id="tab-context"></section>
+        <section class="tab-panel" id="tab-policies"></section>
+        <section class="tab-panel" id="tab-execution"></section>
+        <section class="tab-panel" id="tab-audit"></section>
+        <section class="tab-panel" id="tab-raw"></section>
+      </div>
+    </aside>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

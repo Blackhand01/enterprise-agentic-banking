@@ -1,16 +1,16 @@
 [
   {
     "id": "doc_transfer_security_thresholds_v2",
-    "title": "Transfer Security Thresholds",
+    "title": "Soglie di sicurezza per i trasferimenti",
     "category": "payments_and_transfers",
     "version": "2.0",
     "is_stale": false,
-    "body": "Bonifici e trasferimenti di denaro devono essere valutati in base a importo, beneficiario, novita del pattern e reversibilita. Un trasferimento verso un conto o saving pot gia intestato allo stesso cliente puo essere proposto dall'agente. Se l'importo supera 500 EUR, se il beneficiario e nuovo, o se il pattern e anomalo rispetto allo storico, il sistema deve richiedere approvazione esplicita. Per importi superiori a 1000 EUR o verso beneficiari esterni mai usati, e richiesta autenticazione step-up. Il modello AI non puo autorizzare autonomamente movimenti di denaro.",
+    "body": "Bonifici e trasferimenti di denaro devono essere valutati in base a importo, beneficiario, novita del pattern e reversibilita. Un trasferimento verso un conto o saving pot gia intestato allo stesso cliente puo essere proposto dall'agente. Se l'importo supera il limite di rischio configurato per il profilo cliente, se il beneficiario e nuovo, o se il pattern e anomalo rispetto allo storico, il sistema deve richiedere approvazione esplicita o autenticazione step-up secondo la route di rischio corrente. Il modello AI non puo autorizzare autonomamente movimenti di denaro.",
     "risk_level": "HIGH"
   },
   {
     "id": "doc_savings_optimization_v1",
-    "title": "Savings Optimization Guidelines",
+    "title": "Linee guida per ottimizzazione risparmio",
     "category": "savings",
     "version": "1.0",
     "is_stale": false,
@@ -19,7 +19,7 @@
   },
   {
     "id": "doc_grounding_no_hallucination_v1",
-    "title": "Grounding and No Hallucination Policy",
+    "title": "Policy di grounding e anti-allucinazione",
     "category": "grounding",
     "version": "1.0",
     "is_stale": false,
@@ -28,7 +28,7 @@
   },
   {
     "id": "doc_customer_notifications_v1",
-    "title": "Customer Notification Policy",
+    "title": "Policy notifiche cliente",
     "category": "communications",
     "version": "1.0",
     "is_stale": false,
@@ -37,7 +37,7 @@
   },
   {
     "id": "doc_joint_accounts_authorization_v1",
-    "title": "Joint Account Authorization Policy",
+    "title": "Policy autorizzazione conti condivisi",
     "category": "shared_accounts",
     "version": "1.0",
     "is_stale": false,
@@ -46,7 +46,7 @@
   },
   {
     "id": "doc_legacy_autonomous_transfer_limit_v0",
-    "title": "Legacy Autonomous Transfer Limit",
+    "title": "Limite autonomo legacy per trasferimenti",
     "category": "payments_and_transfers",
     "version": "0.0",
     "is_stale": true,
