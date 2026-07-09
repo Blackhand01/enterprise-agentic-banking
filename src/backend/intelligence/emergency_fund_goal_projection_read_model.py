@@ -161,8 +161,6 @@ def _timeline_note(proposal: dict[str, Any]) -> str:
         return "Approvando l'azione, il contributo mensile richiesto diminuisce."
     if "unexpected_expense_detected" in reason_codes:
         return "Dopo l'imprevisto l'agente mette in pausa il trasferimento e sposta la timeline di un mese."
-    if "unused_subscription_detected" in reason_codes:
-        return "Ridurre costi ricorrenti puo riportare la timeline verso la data obiettivo."
     return "L'agente preserva liquidita e richiede revisione prima di muovere fondi."
 
 

@@ -16,13 +16,11 @@ from .customer_emergency_goal import default_emergency_fund_goal
 from .emergency_fund_action_templates import (
     cashflow_review_plan,
     maintain_pace_plan,
-    subscription_review_plan,
     transfer_to_emergency_fund_plan,
 )
 from .emergency_fund_proposal_evidence import build_emergency_fund_proposal_evidence
 from .proposal_safety_routes import (
     already_executed_route,
-    event_scenario,
     known_expenses_blocked_route,
     known_expenses_would_not_be_covered,
 )
@@ -36,12 +34,10 @@ class EmergencyFundRecommendationPlanner:
         banking_store: SQLiteBankingStore,
         trace_id_factory: Callable[[], str],
         goal_provider: Callable[[], dict[str, Any]] | None = None,
-        event_provider: Callable[[], dict[str, Any] | None] | None = None,
     ) -> None:
         self.banking_store = banking_store
         self.trace_id_factory = trace_id_factory
         self.goal_provider = goal_provider or (lambda: default_emergency_fund_goal())
-        self.event_provider = event_provider or (lambda: None)
 
     def build(self, amount: float | None = None) -> dict[str, Any]:
         checking = self.banking_store.account_by_name("Checking")
@@ -147,9 +143,6 @@ class EmergencyFundRecommendationPlanner:
         goal: dict[str, Any],
         financial_rules: dict[str, Any],
     ) -> dict[str, Any]:
-        if event_scenario(self.event_provider()) == "unused_subscription":
-            return subscription_review_plan(goal)
-
         if self._has_recent_unexpected_expense():
             return cashflow_review_plan(goal, reason="unexpected_expense")
 

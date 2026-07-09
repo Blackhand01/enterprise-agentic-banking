@@ -42,15 +42,17 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1)
 
 
-class ScenarioRequest(BaseModel):
-    scenario: str = Field(min_length=1)
-
-
 class FinancialRulesRequest(BaseModel):
     autonomous_transfer_limit_eur: float | None = Field(default=None, gt=0)
     minimum_cash_buffer_eur: float | None = Field(default=None, ge=0)
     surplus_investment_ratio: float | None = Field(default=None, gt=0, le=1)
     transfer_rounding_increment_eur: float | None = Field(default=None, gt=0)
+
+
+class SandboxStateRequest(BaseModel):
+    checking_balance: float = Field(ge=0)
+    emergency_balance: float = Field(ge=0)
+    upcoming_expenses: float = Field(ge=0)
 
 
 @app.get("/")
@@ -79,15 +81,15 @@ def chat(request: ChatRequest) -> dict:
     return service.chat(request.message)
 
 
-@app.post("/api/simulate-event")
-def simulate_event(request: ScenarioRequest) -> dict:
-    return service.simulate_event(request.scenario)
-
-
 @app.post("/api/financial-rules")
 def update_financial_rules(request: FinancialRulesRequest) -> dict:
     updated = service.update_financial_rules(**request.model_dump(exclude_none=True))
     return {"status": "OK", "financial_rules": updated, "state": service.dashboard_state()}
+
+
+@app.post("/api/sandbox/inject-state")
+def inject_sandbox_state(request: SandboxStateRequest) -> dict:
+    return service.inject_sandbox_state(**request.model_dump())
 
 
 @app.post("/api/reset-audit")

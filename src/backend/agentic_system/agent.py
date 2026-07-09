@@ -1,4 +1,4 @@
-"""Groq-powered banking agent orchestration.
+"""Provider-agnostic banking agent orchestration.
 
 This module keeps orchestration thin: prompt construction, chat history,
 tool execution and schema validation live in dedicated modules.
@@ -7,14 +7,8 @@ tool execution and schema validation live in dedicated modules.
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 from typing import Any
-
-try:
-    from groq import Groq
-except ImportError:  # Allows tests/imports without the optional dependency.
-    Groq = None  # type: ignore[assignment]
 
 try:
     from .chat_history import SlidingWindowChatHistory
@@ -22,28 +16,41 @@ try:
         response_has_customer_unsafe_content,
         sanitize_customer_response,
     )
+    from .llm_provider import (
+        LLMProviderConfig,
+        build_chat_client,
+        build_chat_client_for_config,
+        fallback_provider_configs,
+    )
     from .prompts import build_system_prompt
     from .retrieval import PolicyRetriever
-    from .schemas import groq_tool_definitions
+    from .schemas import llm_tool_definitions
     from .tools import BankingToolExecutor
 except ImportError:  # Allows direct script-style imports during prototyping.
     from chat_history import SlidingWindowChatHistory
     from guardrails import response_has_customer_unsafe_content, sanitize_customer_response
+    from llm_provider import (
+        LLMProviderConfig,
+        build_chat_client,
+        build_chat_client_for_config,
+        fallback_provider_configs,
+    )
     from prompts import build_system_prompt
     from retrieval import PolicyRetriever
-    from schemas import groq_tool_definitions
+    from schemas import llm_tool_definitions
     from tools import BankingToolExecutor
 
 
 class BankingAgent:
-    """Coordinates Groq chat completions and local tool execution."""
+    """Coordinates LLM chat completions and local tool execution."""
 
-    DEFAULT_MODEL = "llama-3.3-70b-versatile"
+    DEFAULT_MODEL = ""
 
     def __init__(
         self,
         *,
         groq_client: Any | None = None,
+        llm_client: Any | None = None,
         model: str = DEFAULT_MODEL,
         history_window: int = 10,
         policy_db_path: str | Path = "policyDB.json",
@@ -54,7 +61,15 @@ class BankingAgent:
         self.chat_history = SlidingWindowChatHistory(history_window)
         self.policy_retriever = PolicyRetriever(policy_db_path)
         self.tool_executor = BankingToolExecutor(db_path, ledger_seed_path)
-        self.groq_client = groq_client or self._build_groq_client()
+        self.llm_client = llm_client or groq_client
+        self.llm_provider = "custom"
+        self._fallback_provider_configs: list[LLMProviderConfig] = []
+        if self.llm_client is None:
+            self.llm_client, provider_config = build_chat_client()
+            self.llm_provider = provider_config.provider
+            if not self.model:
+                self.model = provider_config.model
+            self._fallback_provider_configs = fallback_provider_configs(provider_config)
 
     @property
     def history(self) -> list[dict[str, Any]]:
@@ -64,7 +79,7 @@ class BankingAgent:
 
     @property
     def tools(self) -> list[dict[str, Any]]:
-        return groq_tool_definitions()
+        return llm_tool_definitions()
 
     def chat(self, user_input: str) -> str:
         """Send a user message through the agent loop and return final text."""
@@ -97,18 +112,6 @@ class BankingAgent:
             {"recipient": recipient, "amount": amount},
         )
 
-    def _build_groq_client(self) -> Any:
-        if Groq is None:
-            raise RuntimeError(
-                "The 'groq' package is not installed. Install it with: pip install groq"
-            )
-
-        api_key = os.environ.get("GROQ_API_KEY")
-        if not api_key:
-            raise RuntimeError("Missing GROQ_API_KEY environment variable.")
-
-        return Groq(api_key=api_key)
-
     def _system_prompt(self) -> str:
         return build_system_prompt(self.policy_retriever)
 
@@ -137,9 +140,78 @@ class BankingAgent:
             kwargs["tool_choice"] = "auto"
 
         try:
-            return self.groq_client.chat.completions.create(**kwargs)
+            return self.llm_client.chat.completions.create(**kwargs)
         except Exception as exc:
-            raise RuntimeError(f"Groq API call failed: {exc}") from exc
+            try:
+                fallback_response = self._try_fallback_completion(
+                    kwargs,
+                    original_provider=self.llm_provider,
+                    original_error=exc,
+                )
+            except RuntimeError:
+                raise
+            if fallback_response is not None:
+                return fallback_response
+            raise RuntimeError(f"{self.llm_provider} LLM API call failed: {exc}") from exc
+
+    def _try_fallback_completion(
+        self,
+        kwargs: dict[str, Any],
+        *,
+        original_provider: str,
+        original_error: Exception,
+    ) -> Any | None:
+        if not self._is_retryable_provider_error(original_error):
+            return None
+
+        errors = [f"{original_provider}: {original_error}"]
+        for config in self._fallback_provider_configs:
+            fallback_kwargs = dict(kwargs)
+            fallback_kwargs["model"] = config.model
+            try:
+                client = build_chat_client_for_config(config)
+                response = client.chat.completions.create(**fallback_kwargs)
+            except Exception as exc:
+                errors.append(f"{config.provider}: {exc}")
+                if not self._is_retryable_provider_error(exc):
+                    continue
+                continue
+
+            self.llm_client = client
+            self.llm_provider = config.provider
+            self.model = config.model
+            self._fallback_provider_configs = [
+                candidate
+                for candidate in self._fallback_provider_configs
+                if candidate.provider != config.provider
+            ]
+            return response
+
+        raise RuntimeError("All configured LLM providers failed: " + " | ".join(errors))
+
+    @staticmethod
+    def _is_retryable_provider_error(error: Exception) -> bool:
+        lowered = str(error).lower()
+        return any(
+            marker in lowered
+            for marker in (
+                "401",
+                "403",
+                "408",
+                "409",
+                "429",
+                "500",
+                "502",
+                "503",
+                "504",
+                "invalid_api_key",
+                "rate_limit",
+                "rate limit",
+                "timeout",
+                "temporarily unavailable",
+                "service unavailable",
+            )
+        )
 
     @staticmethod
     def _has_tool_calls(assistant_message: Any) -> bool:
@@ -215,10 +287,16 @@ class BankingAgent:
 
     @staticmethod
     def _format_transaction_summary(payload: dict[str, Any]) -> str | None:
+        category = payload.get("category", "richiesta")
+        if payload.get("status") == "NO_DATA":
+            search_query = payload.get("search_query") or category
+            return (
+                "Non ho accesso ai dati relativi a "
+                f"{search_query} nel tuo profilo attuale."
+            )
         if payload.get("status") != "OK":
             return None
 
-        category = payload.get("category", "richiesta")
         transactions = payload.get("transactions", [])
         if not isinstance(transactions, list):
             return None

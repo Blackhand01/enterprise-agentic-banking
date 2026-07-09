@@ -49,13 +49,17 @@ const staticIds = [
   "customer-result",
   "deep-dive-content",
   "deep-dive-toggle",
-  "event-result",
   "financial-rules-settings",
   "goal-summary",
   "inspector",
   "inspector-close",
   "inspector-toggle",
   "recent-transactions",
+  "sandbox-apply-button",
+  "sandbox-checking-balance",
+  "sandbox-emergency-balance",
+  "sandbox-result",
+  "sandbox-upcoming-expenses",
   "tab-audit",
   "tab-context",
   "tab-execution",
@@ -259,6 +263,12 @@ async function main() {
     }
     if (!elements["financial-rules-settings"].innerHTML.includes("Imposta limite")) {
       throw new Error("Financial rules settings panel missing");
+    }
+    if (Number(elements["sandbox-checking-balance"].value) !== 4250) {
+      throw new Error("Sandbox checking balance input was not initialized");
+    }
+    if (Number(elements["sandbox-upcoming-expenses"].value) !== 759.9) {
+      throw new Error("Sandbox upcoming expenses input was not initialized");
     }
     const cashflowHtml = elements["cashflow-supervisor"].innerHTML;
     if (!cashflowHtml.includes("liquidity-bar") || !cashflowHtml.includes("Spese bloccate")) {

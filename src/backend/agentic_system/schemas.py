@@ -1,7 +1,8 @@
-"""Centralized Pydantic schemas for agent tool contracts.
+"""Centralized Pydantic schemas for OpenAI-compatible agent tool contracts.
 
-The agent exposes these schemas to Groq for tool calling and uses the same
-models to validate tool arguments before executing local Python functions.
+The agent exposes these schemas to the selected LLM provider for tool calling
+and uses the same models to validate tool arguments before executing local
+Python functions.
 """
 
 from __future__ import annotations
@@ -24,8 +25,9 @@ class FetchTransactionsArgs(BaseModel):
     search_query: str | None = Field(
         default=None,
         description=(
-            "Filtro testuale opzionale per merchant, descrizione, categoria o data. "
-            "Esempi: ski, ProSki, running."
+            "Query semantica opzionale per concetti specifici dentro la categoria. "
+            "Usala quando il cliente chiede sotto-temi come sci, neve, trekking, mare, "
+            "merchant o descrizioni naturali."
         ),
     )
 
@@ -97,8 +99,8 @@ TOOL_ARG_MODELS: dict[str, type[BaseModel]] = {
 }
 
 
-def groq_tool_definitions() -> list[dict[str, Any]]:
-    """Return Groq-compatible tool definitions from the central Pydantic models."""
+def llm_tool_definitions() -> list[dict[str, Any]]:
+    """Return OpenAI-compatible tool definitions from the central Pydantic models."""
 
     return [
         {
@@ -128,7 +130,11 @@ def groq_tool_definitions() -> list[dict[str, Any]]:
             "type": "function",
             "function": {
                 "name": "fetch_transactions",
-                "description": "Recupera transazioni grounded dal ledger per categoria.",
+                "description": (
+                    "Recupera transazioni grounded dal ledger per categoria. "
+                    "Quando il cliente chiede un sotto-tema specifico, passa anche "
+                    "search_query con quel concetto per attivare il retrieval semantico locale."
+                ),
                 "parameters": FetchTransactionsArgs.model_json_schema(),
             },
         },
@@ -141,6 +147,12 @@ def groq_tool_definitions() -> list[dict[str, Any]]:
             },
         },
     ]
+
+
+def groq_tool_definitions() -> list[dict[str, Any]]:
+    """Backward-compatible alias kept for older imports/tests."""
+
+    return llm_tool_definitions()
 
 
 def validate_tool_arguments(tool_name: str, arguments: dict[str, Any]) -> BaseModel:

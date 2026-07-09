@@ -7,6 +7,7 @@ from typing import Any
 from .external_expense_command import record_external_expense
 from .external_income_command import record_external_income
 from .internal_transfer_command import execute_internal_transfer
+from .sandbox_state_command import inject_sandbox_state
 from .sqlite_connection import SQLiteConnectionProvider
 
 
@@ -122,3 +123,17 @@ class CustomerBankingWriteStore:
                 updated,
             )
             return updated
+
+    def inject_sandbox_state(
+        self,
+        *,
+        checking_balance: float,
+        emergency_balance: float,
+        upcoming_expenses: float,
+    ) -> dict[str, Any]:
+        return inject_sandbox_state(
+            connection_provider=self.connection_provider,
+            checking_balance=checking_balance,
+            emergency_balance=emergency_balance,
+            upcoming_expenses=upcoming_expenses,
+        )

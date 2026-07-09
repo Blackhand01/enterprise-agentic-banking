@@ -1,0 +1,91 @@
+"""Developer sandbox command for direct state injection in the PoC."""
+
+from __future__ import annotations
+
+from datetime import date, timedelta
+from typing import Any
+
+from .ledger_write_helpers import account_for_update
+from .sqlite_connection import SQLiteConnectionProvider
+
+
+def inject_sandbox_state(
+    *,
+    connection_provider: SQLiteConnectionProvider,
+    checking_balance: float,
+    emergency_balance: float,
+    upcoming_expenses: float,
+) -> dict[str, Any]:
+    """Overwrite dashboard-driving banking state with exact demo values."""
+
+    checking_value = round(float(checking_balance), 2)
+    emergency_value = round(float(emergency_balance), 2)
+    upcoming_value = round(float(upcoming_expenses), 2)
+    if checking_value < 0 or emergency_value < 0 or upcoming_value < 0:
+        return {
+            "status": "ERROR",
+            "reason": "NEGATIVE_SANDBOX_VALUE",
+            "action_required": "FIX_INPUT",
+        }
+
+    scheduled_date = (date.today() + timedelta(days=7)).isoformat()
+    with connection_provider.connect() as connection:
+        checking = account_for_update(connection, "Checking")
+        emergency = account_for_update(connection, "Emergency_Fund")
+
+        connection.execute(
+            """
+            UPDATE accounts
+            SET balance = ?, available_balance = ?
+            WHERE account_id = ?
+            """,
+            (checking_value, checking_value, checking["account_id"]),
+        )
+        connection.execute(
+            """
+            UPDATE accounts
+            SET balance = ?
+            WHERE account_id = ?
+            """,
+            (emergency_value, emergency["account_id"]),
+        )
+
+        connection.execute("DELETE FROM scheduled_transactions")
+        if upcoming_value > 0:
+            connection.execute(
+                """
+                INSERT INTO scheduled_transactions (
+                    scheduled_id, account_id, date, merchant, amount, category
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    "sandbox_upcoming_expenses",
+                    checking["account_id"],
+                    scheduled_date,
+                    "Spese note sandbox",
+                    -upcoming_value,
+                    "sandbox",
+                ),
+            )
+
+        connection.execute("DELETE FROM executed_operations")
+        connection.execute(
+            """
+            UPDATE monthly_snapshots
+            SET checking_end_balance_eur = ?,
+                emergency_fund_balance_eur = ?
+            WHERE month = (
+                SELECT month FROM monthly_snapshots ORDER BY month DESC LIMIT 1
+            )
+            """,
+            (checking_value, emergency_value),
+        )
+
+    return {
+        "status": "SANDBOX_STATE_INJECTED",
+        "checking_balance": checking_value,
+        "emergency_balance": emergency_value,
+        "upcoming_expenses": upcoming_value,
+        "scheduled_date": scheduled_date if upcoming_value > 0 else None,
+    }

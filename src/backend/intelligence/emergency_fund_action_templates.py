@@ -87,25 +87,3 @@ def maintain_pace_plan(goal: dict[str, Any]) -> dict[str, Any]:
             "L'agente continuera a monitorare il piano e rivalutera solo se il contesto cambia.",
         ],
     }
-
-
-def subscription_review_plan(goal: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "action_type": "REVIEW_SUBSCRIPTION",
-        "route": "REVIEW_REQUIRED",
-        "required_next_step": "CUSTOMER_REVIEW",
-        "reason": "Possibile costo ricorrente non coerente con l'obiettivo cliente.",
-        "reason_codes": ["unused_subscription_detected", "expense_optimization"],
-        "amount": 0.0,
-        "title": "Verifica abbonamento inutilizzato",
-        "summary": f"L'obiettivo attivo e: {goal['description']}",
-        "recommended_action": (
-            "Controllare l'abbonamento CloudStorage Premium e decidere se mantenerlo "
-            "o disdirlo prima del prossimo rinnovo."
-        ),
-        "rationale": [
-            "Lo scenario segnala un costo ricorrente potenzialmente evitabile.",
-            "L'azione non muove denaro: richiede solo revisione e conferma del cliente.",
-            "Ridurre costi ricorrenti migliora il margine disponibile per l'obiettivo.",
-        ],
-    }

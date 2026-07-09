@@ -76,25 +76,31 @@
             </details>
           </section>
 
-          <section class="panel event-panel">
+          <section class="panel sandbox-panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Motore eventi</p>
-                <h2>Scenari trigger</h2>
+                <p class="eyebrow">Developer Sandbox</p>
+                <h2>State Injection</h2>
               </div>
             </div>
-            <div class="scenario-actions">
-              <button class="secondary scenario-button" data-scenario="salary_arrival">
-                Simula arrivo stipendio
-              </button>
-              <button class="secondary scenario-button" data-scenario="high_unexpected_expense">
-                Simula spesa imprevista alta
-              </button>
-              <button class="secondary scenario-button" data-scenario="unused_subscription">
-                Simula abbonamento inutilizzato
+            <div class="sandbox-form">
+              <label>
+                <span>Saldo corrente simulato</span>
+                <input id="sandbox-checking-balance" type="number" min="0" step="50" />
+              </label>
+              <label>
+                <span>Fondo emergenze attuale</span>
+                <input id="sandbox-emergency-balance" type="number" min="0" step="50" />
+              </label>
+              <label>
+                <span>Spese note previste</span>
+                <input id="sandbox-upcoming-expenses" type="number" min="0" step="10" />
+              </label>
+              <button id="sandbox-apply-button" class="secondary" type="button">
+                Applica mutazione di stato
               </button>
             </div>
-            <div id="event-result" class="event-result"></div>
+            <div id="sandbox-result" class="sandbox-result"></div>
           </section>
 
           <section class="panel assistant-panel">

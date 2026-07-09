@@ -14,7 +14,6 @@ try:
     )
     from .application.dashboard_state_response_builder import DashboardStateResponseBuilder
     from .application.local_env_file_loader import load_local_env_file
-    from .application.scenario_event_simulator import ScenarioEventSimulator
     from .application.trace_id_factory import new_trace_id
     from .intelligence.customer_emergency_goal import default_user_goal
     from .intelligence.dashboard_read_model_builder import CustomerDashboardReadModelBuilder
@@ -32,7 +31,6 @@ except ImportError:  # Allows direct script-style imports during prototyping.
     )
     from application.dashboard_state_response_builder import DashboardStateResponseBuilder
     from application.local_env_file_loader import load_local_env_file
-    from application.scenario_event_simulator import ScenarioEventSimulator
     from application.trace_id_factory import new_trace_id
     from intelligence.customer_emergency_goal import default_user_goal
     from intelligence.dashboard_read_model_builder import CustomerDashboardReadModelBuilder
@@ -68,7 +66,6 @@ class PartABankingDemoApplication:
             self.banking_store,
             new_trace_id,
             goal_provider=lambda: self.user_goal,
-            event_provider=lambda: self._last_event,
         )
         self.proposals = self.emergency_fund_planner
         self.dashboard_read_models = CustomerDashboardReadModelBuilder(self.banking_store)
@@ -91,14 +88,6 @@ class PartABankingDemoApplication:
             trace_id_factory=new_trace_id,
             now_factory=iso_now,
         )
-        self.event_simulator = ScenarioEventSimulator(
-            banking_store=self.banking_store,
-            proposal_builder=self.emergency_fund_planner,
-            audit_log=self.audit_trail,
-            trace_id_factory=new_trace_id,
-            now_factory=iso_now,
-        )
-        self.event_workflow = self.event_simulator
         self.chat_service = CustomerChatService(
             policy_db_path=self.policy_path,
             db_path=self.db_path,
@@ -149,10 +138,21 @@ class PartABankingDemoApplication:
     def agent_inbox(self, proposal: dict[str, Any]) -> list[dict[str, Any]]:
         return self.dashboard_read_models.agent_inbox(proposal)
 
-    def simulate_event(self, scenario: str) -> dict[str, Any]:
-        event = self.event_simulator.simulate_event(scenario)
-        self._last_event = event
-        return {"event": event, "state": self.dashboard_state()}
+    def inject_sandbox_state(
+        self,
+        *,
+        checking_balance: float,
+        emergency_balance: float,
+        upcoming_expenses: float,
+    ) -> dict[str, Any]:
+        result = self.banking_store.inject_sandbox_state(
+            checking_balance=checking_balance,
+            emergency_balance=emergency_balance,
+            upcoming_expenses=upcoming_expenses,
+        )
+        self._last_event = None
+        self.chat_service.reset_agent()
+        return {"status": result["status"], "mutation": result, "state": self.dashboard_state()}
 
     def chat(self, message: str) -> dict[str, Any]:
         return self.chat_service.chat(message)

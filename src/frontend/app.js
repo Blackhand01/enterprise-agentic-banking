@@ -12,7 +12,7 @@ let activeInspectorTab = "context";
 let actionInboxOpen = false;
 let amountPreviewTimer = null;
 let transferInFlight = false;
-let scenarioInFlight = false;
+let sandboxInFlight = false;
 
 const PROPOSAL_PENDING = "PROPOSAL_PENDING";
 const PROPOSAL_EXECUTED = "PROPOSAL_EXECUTED";
@@ -38,6 +38,7 @@ function renderAll() {
   renderUser();
   renderGoal();
   renderFinancialRulesSettings();
+  renderSandboxControls();
   renderSupervisorCashflow();
   renderAgentInbox();
   renderRecentTransactions();
@@ -62,6 +63,23 @@ function renderFinancialRulesSettings() {
       </div>
     </div>
   `;
+}
+
+function renderSandboxControls() {
+  const checkingInput = $("sandbox-checking-balance");
+  const emergencyInput = $("sandbox-emergency-balance");
+  const upcomingInput = $("sandbox-upcoming-expenses");
+  if (!checkingInput || !emergencyInput || !upcomingInput) return;
+
+  const activeElement = document.activeElement;
+  const checking = findAccount("Checking");
+  const emergency = findAccount("Emergency_Fund");
+  const inputs = [checkingInput, emergencyInput, upcomingInput];
+  if (!inputs.includes(activeElement)) {
+    checkingInput.value = Number(checking?.available_balance || checking?.balance || 0);
+    emergencyInput.value = Number(emergency?.balance || 0);
+    upcomingInput.value = Number(currentProposal?.upcoming_expenses_30d || 0);
+  }
 }
 
 function renderGoal() {
@@ -691,25 +709,47 @@ async function approveTransfer() {
   }
 }
 
-async function simulateScenario(scenario) {
-  if (scenarioInFlight) return;
-  scenarioInFlight = true;
-  updateScenarioButtons();
+async function applySandboxState() {
+  if (sandboxInFlight) return;
+  const checkingBalance = Number($("sandbox-checking-balance")?.value);
+  const emergencyBalance = Number($("sandbox-emergency-balance")?.value);
+  const upcomingExpenses = Number($("sandbox-upcoming-expenses")?.value);
+  if (
+    !Number.isFinite(checkingBalance)
+    || !Number.isFinite(emergencyBalance)
+    || !Number.isFinite(upcomingExpenses)
+    || checkingBalance < 0
+    || emergencyBalance < 0
+    || upcomingExpenses < 0
+  ) {
+    renderSandboxResult({
+      status: "ERROR",
+      reason: "Inserisci solo valori numerici maggiori o uguali a zero.",
+    });
+    return;
+  }
+
+  sandboxInFlight = true;
+  updateSandboxButton();
   try {
-    const result = await api("/api/simulate-event", {
+    const result = await api("/api/sandbox/inject-state", {
       method: "POST",
-      body: JSON.stringify({ scenario }),
+      body: JSON.stringify({
+        checking_balance: checkingBalance,
+        emergency_balance: emergencyBalance,
+        upcoming_expenses: upcomingExpenses,
+      }),
     });
     state = result.state;
     currentProposal = state.proposal;
-    lastTrace = result.event;
+    lastTrace = null;
     actionInboxOpen = false;
     renderAll();
-    renderEventResult(result.event);
+    renderSandboxResult(result.mutation);
     renderInspector();
   } finally {
-    scenarioInFlight = false;
-    updateScenarioButtons();
+    sandboxInFlight = false;
+    updateSandboxButton();
   }
 }
 
@@ -730,12 +770,18 @@ async function saveRiskLimit() {
   renderAll();
 }
 
-function renderEventResult(event) {
-  const toolResult = event.tool_result || {};
-  $("event-result").innerHTML = `
-    <div class="result-box ${toolResult.status === "ERROR" ? "blocked" : "ok"}">
-      <strong>${escapeHtml(toolResult.title || "Scenario elaborato")}</strong>
-      <p>${escapeHtml(toolResult.summary || `Stato evento: ${toolResult.status}`)}</p>
+function renderSandboxResult(result) {
+  const target = $("sandbox-result");
+  if (!target) return;
+  const ok = result?.status === "SANDBOX_STATE_INJECTED";
+  target.innerHTML = `
+    <div class="result-box ${ok ? "ok" : "blocked"}">
+      <strong>${ok ? "Stato sandbox applicato" : "Mutazione non valida"}</strong>
+      <p>${
+        ok
+          ? `Checking ${eur.format(result.checking_balance)}, fondo emergenze ${eur.format(result.emergency_balance)}, spese note ${eur.format(result.upcoming_expenses)}.`
+          : escapeHtml(result?.reason || "Impossibile applicare la mutazione.")
+      }</p>
     </div>
   `;
 }
@@ -922,10 +968,13 @@ function formatRecommendedAction(proposal) {
   return proposal.recommended_action;
 }
 
-function updateScenarioButtons() {
-  document.querySelectorAll(".scenario-button").forEach((button) => {
-    button.disabled = scenarioInFlight;
-  });
+function updateSandboxButton() {
+  const button = $("sandbox-apply-button");
+  if (!button) return;
+  button.disabled = sandboxInFlight;
+  button.textContent = sandboxInFlight
+    ? "Applicazione..."
+    : "Applica mutazione di stato";
 }
 
 function riskLabel(risk) {
@@ -1288,9 +1337,7 @@ document.querySelectorAll(".tab").forEach((tab) => {
 document.querySelectorAll(".quick-prompt").forEach((button) => {
   button.addEventListener("click", () => askChat(button.dataset.prompt));
 });
-document.querySelectorAll(".scenario-button").forEach((button) => {
-  button.addEventListener("click", () => simulateScenario(button.dataset.scenario));
-});
+$("sandbox-apply-button")?.addEventListener("click", applySandboxState);
 
 loadState().catch((error) => {
   document.body.innerHTML = `<pre>Impossibile caricare il prototipo: ${error.message}</pre>`;

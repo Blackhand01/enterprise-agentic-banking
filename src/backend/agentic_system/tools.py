@@ -11,9 +11,11 @@ try:
     from ..storage.sqlite_banking_store import SQLiteBankingStore
     from .guardrails import evaluate_transfer_guardrail
     from .schemas import validate_tool_arguments
+    from .semantic_transaction_retriever import SemanticTransactionRetriever
 except ImportError:  # Allows direct script-style imports during prototyping.
     from guardrails import evaluate_transfer_guardrail
     from schemas import validate_tool_arguments
+    from semantic_transaction_retriever import SemanticTransactionRetriever
     from storage.sqlite_banking_store import SQLiteBankingStore
 
 
@@ -71,23 +73,22 @@ class BankingToolExecutor:
         return json.dumps(self.repository.customer_context_summary(), ensure_ascii=False)
 
     def fetch_transactions(self, category: str, search_query: str | None = None) -> str:
-        """Grounded ledger lookup by transaction category."""
+        """Grounded semantic ledger lookup by transaction category and query intent."""
 
         normalized_category = category.strip().lower()
         matches = self.repository.transactions_by_category(normalized_category)
-        filtered_matches = _filter_transactions_by_text(
-            matches,
-            search_query,
-            category=normalized_category,
-        )
+        retriever = SemanticTransactionRetriever(matches)
+        filtered_matches = retriever.semantic_search(search_query)
+        status = "OK" if filtered_matches or not search_query else "NO_DATA"
 
         return json.dumps(
             {
-                "status": "OK",
+                "status": status,
                 "category": category,
                 "search_query": search_query,
                 "count": len(filtered_matches),
                 "unfiltered_count": len(matches),
+                "similarity_threshold": retriever.threshold,
                 "transactions": filtered_matches,
             },
             ensure_ascii=False,
@@ -119,32 +120,3 @@ class BankingToolExecutor:
             amount=amount,
         )
         return json.dumps(result, ensure_ascii=False)
-
-
-def _filter_transactions_by_text(
-    transactions: list[dict[str, Any]],
-    search_query: str | None,
-    *,
-    category: str,
-) -> list[dict[str, Any]]:
-    if not search_query:
-        return transactions
-
-    category_terms = {category, category.rstrip("s"), f"{category}s"}
-    terms = []
-    for raw_term in search_query.lower().replace("-", " ").split():
-        term = raw_term.rstrip("s")
-        if len(term) > 2 and term not in category_terms:
-            terms.append(term)
-    if not terms:
-        return transactions
-
-    filtered = []
-    for transaction in transactions:
-        haystack = " ".join(
-            str(transaction.get(key, ""))
-            for key in ("merchant", "display_name", "category", "date", "transaction_id")
-        ).lower()
-        if any(term in haystack for term in terms):
-            filtered.append(transaction)
-    return filtered

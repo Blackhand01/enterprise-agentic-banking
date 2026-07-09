@@ -591,7 +591,7 @@ body.inspector-open .app-shell {
 }
 
 .supervisor-panel,
-.event-panel,
+.sandbox-panel,
 .inbox-panel,
 .goal-panel {
   display: grid;
@@ -688,7 +688,7 @@ body.inspector-open .app-shell {
 }
 
 .scheduled-strip,
-.scenario-actions,
+.sandbox-form,
 .agent-inbox {
   display: grid;
   gap: 10px;
@@ -996,19 +996,22 @@ body.inspector-open .app-shell {
   line-height: 1.45;
 }
 
-.event-result {
+.sandbox-result {
   min-height: 0;
 }
 
-.scenario-actions {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.workspace-sidebar .scenario-actions {
+.sandbox-form {
   grid-template-columns: 1fr;
 }
 
-.workspace-sidebar .event-result {
+.sandbox-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.sandbox-form label span,
+.workspace-sidebar .sandbox-result {
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -1533,7 +1536,7 @@ pre {
   .cashflow-grid,
   .cashflow-facts,
   .scheduled-strip,
-  .scenario-actions,
+  .sandbox-form,
   .transition-context,
   .goal-grid,
   .goal-timeline,

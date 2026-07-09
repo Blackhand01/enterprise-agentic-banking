@@ -11,20 +11,58 @@ sys.path.insert(0, str(ROOT_DIR))
 from fastapi.testclient import TestClient
 
 from src.backend.agentic_system.agent import BankingAgent
+from src.backend.agentic_system.semantic_transaction_retriever import SemanticTransactionRetriever
+from src.backend.application.customer_chat_service import _assistant_unavailable_message
 from src.backend.main import app, service
 
 
 class FakeAgent:
     def __init__(self) -> None:
-        self.history = [
+        self.history = []
+
+    def chat(self, user_input: str) -> str:
+        self.history.append(
             {
                 "role": "tool",
                 "content": '{"status":"OK","category":"sport","count":2,"transactions":[]}',
             }
+        )
+        return "Risposta agentica di test tramite tool calling."
+
+
+class FakeNoToolAgent:
+    def __init__(self) -> None:
+        self.history = [
+            {
+                "role": "tool",
+                "content": '{"status":"OK","category":"sport","count":1,"transactions":[]}',
+            }
         ]
 
     def chat(self, user_input: str) -> str:
-        return "Risposta agentica di test tramite tool calling."
+        self.history.append({"role": "assistant", "content": "Risposta senza tool."})
+        return "Risposta senza tool."
+
+
+class FakeEmbeddingModel:
+    def encode(
+        self,
+        texts: list[str],
+        *,
+        convert_to_numpy: bool,
+        normalize_embeddings: bool,
+        show_progress_bar: bool,
+    ):
+        vectors = []
+        for text in texts:
+            lowered = text.lower()
+            if "proski" in lowered or "sci" in lowered:
+                vectors.append([1.0, 0.0])
+            elif "trail" in lowered or "trekking" in lowered:
+                vectors.append([0.0, 1.0])
+            else:
+                vectors.append([0.0, 0.0])
+        return vectors
 
 
 def main() -> None:
@@ -120,16 +158,42 @@ def main() -> None:
             account for account in payload["accounts"] if account["name"] == "Emergency_Fund"
         )
 
-        ski_transactions = json.loads(
-            service.tool_executor.execute(
-                "fetch_transactions",
-                {"category": "sport", "search_query": "ski sport"},
+        original_model_cache = SemanticTransactionRetriever._model_cache
+        try:
+            SemanticTransactionRetriever._model_cache = {
+                "sentence-transformers/all-MiniLM-L6-v2": FakeEmbeddingModel()
+            }
+            ski_transactions = json.loads(
+                service.tool_executor.execute(
+                    "fetch_transactions",
+                    {"category": "sport", "search_query": "sci"},
+                )
             )
-        )
-        assert ski_transactions["status"] == "OK"
-        assert ski_transactions["count"] == 1
-        assert ski_transactions["unfiltered_count"] >= ski_transactions["count"]
-        assert ski_transactions["transactions"][0]["merchant"] == "ProSki Shop"
+            assert ski_transactions["status"] == "OK"
+            assert ski_transactions["count"] == 1
+            assert ski_transactions["unfiltered_count"] >= ski_transactions["count"]
+            assert ski_transactions["transactions"][0]["merchant"] == "ProSki Shop"
+            assert ski_transactions["transactions"][0]["semantic_score"] == 1.0
+
+            trekking_transactions = json.loads(
+                service.tool_executor.execute(
+                    "fetch_transactions",
+                    {"category": "sport", "search_query": "trekking"},
+                )
+            )
+            assert trekking_transactions["status"] == "OK"
+            assert trekking_transactions["transactions"][0]["merchant"] == "Trail Running Store"
+
+            sea_transactions = json.loads(
+                service.tool_executor.execute(
+                    "fetch_transactions",
+                    {"category": "sport", "search_query": "mare"},
+                )
+            )
+            assert sea_transactions["status"] == "NO_DATA"
+            assert sea_transactions["count"] == 0
+        finally:
+            SemanticTransactionRetriever._model_cache = original_model_cache
 
         balance_summary = json.loads(service.tool_executor.execute("get_balance_summary", {}))
         assert balance_summary["status"] == "OK"
@@ -194,35 +258,47 @@ def main() -> None:
         assert blocked["tool_result"]["status"] == "BLOCKED"
 
         service.reset_data()
-        salary_before = client.get("/api/state").json()
-        salary_before_checking = next(
-            account for account in salary_before["accounts"] if account["name"] == "Checking"
-        )
-        salary_event = client.post(
-            "/api/simulate-event",
-            json={"scenario": "salary_arrival"},
+        sandbox = client.post(
+            "/api/sandbox/inject-state",
+            json={
+                "checking_balance": 7450.0,
+                "emergency_balance": 3000.0,
+                "upcoming_expenses": 760.0,
+            },
         ).json()
-        assert salary_event["event"]["tool_result"]["status"] == "RECORDED"
-        assert salary_event["event"]["tool_result"]["amount"] == 3200.0
-        salary_after_checking = next(
-            account for account in salary_event["state"]["accounts"] if account["name"] == "Checking"
+        assert sandbox["status"] == "SANDBOX_STATE_INJECTED"
+        sandbox_checking = next(
+            account for account in sandbox["state"]["accounts"] if account["name"] == "Checking"
         )
-        assert (
-            salary_after_checking["available_balance"]
-            == salary_before_checking["available_balance"] + 3200.0
-        )
-        assert salary_event["state"]["customer_activity"][0]["title"] == "Stipendio Tata Innovation Hub"
-        repeated_salary = client.post(
-            "/api/simulate-event",
-            json={"scenario": "salary_arrival"},
-        ).json()
-        assert repeated_salary["event"]["tool_result"]["status"] == "DUPLICATE"
-        repeated_salary_checking = next(
+        sandbox_emergency = next(
             account
-            for account in repeated_salary["state"]["accounts"]
+            for account in sandbox["state"]["accounts"]
+            if account["name"] == "Emergency_Fund"
+        )
+        assert sandbox_checking["available_balance"] == 7450.0
+        assert sandbox_emergency["balance"] == 3000.0
+        assert sandbox["state"]["cashflow_forecast"]["known_expenses_total"] == 760.0
+        assert sandbox["state"]["scheduled_transactions"][0]["amount"] == -760.0
+        assert sandbox["state"]["proposal"]["action_type"] == "TRANSFER"
+        assert sandbox["state"]["proposal"]["amount"] == 500.0
+        assert sandbox["state"]["last_event"] is None
+
+        low_liquidity = client.post(
+            "/api/sandbox/inject-state",
+            json={
+                "checking_balance": 650.0,
+                "emergency_balance": 3000.0,
+                "upcoming_expenses": 760.0,
+            },
+        ).json()
+        low_checking = next(
+            account
+            for account in low_liquidity["state"]["accounts"]
             if account["name"] == "Checking"
         )
-        assert repeated_salary_checking["available_balance"] == salary_after_checking["available_balance"]
+        assert low_checking["available_balance"] == 650.0
+        assert low_liquidity["state"]["proposal"]["action_type"] == "REVIEW_CASHFLOW"
+        assert low_liquidity["state"]["proposal"]["route"] == "REVIEW_REQUIRED"
 
         service.reset_data()
         with service.repository.connection_provider.connect() as connection:
@@ -240,35 +316,6 @@ def main() -> None:
             on_track_state["proposal"]["recommended_action"]
             == "Sei perfettamente allineato al tuo piano di risparmio. Non sono necessari trasferimenti extra questo mese."
         )
-
-        service.reset_data()
-        event = client.post(
-            "/api/simulate-event",
-            json={"scenario": "high_unexpected_expense"},
-        ).json()
-        assert event["event"]["tool_result"]["status"] == "RECORDED"
-        assert event["state"]["last_event"]["tool_result"]["scenario"] == "high_unexpected_expense"
-        assert event["state"]["proposal"]["action_type"] == "REVIEW_CASHFLOW"
-        assert event["state"]["proposal"]["route"] == "REVIEW_REQUIRED"
-        assert (
-            event["state"]["emergency_goal_projection"]["agent_timeline_label"]
-            != event["state"]["emergency_goal_projection"]["target_label"]
-        )
-        assert event["state"]["customer_activity"][0]["title"] == "Spesa imprevista alta"
-        assert event["state"]["customer_activity"][0]["subtitle"] == "imprevisti"
-
-        repeated_event = client.post(
-            "/api/simulate-event",
-            json={"scenario": "high_unexpected_expense"},
-        ).json()
-        assert repeated_event["event"]["tool_result"]["status"] == "DUPLICATE"
-        assert repeated_event["state"]["customer_activity"][0]["title"] == "Spesa imprevista alta"
-        unexpected_expenses = [
-            item
-            for item in repeated_event["state"]["customer_activity"]
-            if item["title"] == "Spesa imprevista alta"
-        ]
-        assert len(unexpected_expenses) == 1
 
         service.reset_data()
         for index in range(3):
@@ -294,6 +341,16 @@ def main() -> None:
         service._banking_agent = FakeAgent()  # noqa: SLF001
         chat = client.post("/api/chat", json={"message": "sport"}).json()
         assert chat["tool_result"]["status"] == "OK"
+
+        service._banking_agent = FakeNoToolAgent()  # noqa: SLF001
+        no_tool_chat = client.post("/api/chat", json={"message": "mare"}).json()
+        assert no_tool_chat["tool_result"]["status"] == "NO_TOOL_CALL"
+        assert "limite di utilizzo del provider LLM" in _assistant_unavailable_message(
+            "openai LLM API call failed: Error code: 429 - rate_limit_exceeded"
+        )
+        assert "chiave LLM configurata non e valida" in _assistant_unavailable_message(
+            "openai LLM API call failed: Error code: 401 - invalid_api_key"
+        )
 
         client.post("/api/reset-audit")
         print("smoke checks passed")

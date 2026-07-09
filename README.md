@@ -30,7 +30,41 @@ Il prototipo usa SQLite come system of record locale (`src/bank_data/banking.db`
 e dati JSON come seed/policy iniziali. Non richiede login, autenticazione reale
 o database vettoriale. La dashboard, i guardrail e il flow di trasferimento
 funzionano senza servizi esterni; la chat agentica con tool calling richiede
-`GROQ_API_KEY` in `.env` o nell'ambiente.
+un provider LLM configurato in `.env` o nell'ambiente.
+
+Esempi `.env` supportati:
+
+```bash
+# OpenAI
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
+
+# Groq
+LLM_PROVIDER=groq
+GROQ_API_KEY=gsk_...
+GROQ_MODEL=llama-3.3-70b-versatile
+
+# Gemini, tramite endpoint OpenAI-compatible
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.5-flash
+
+# Qualsiasi endpoint compatibile con OpenAI Chat Completions
+LLM_PROVIDER=openai_compatible
+LLM_API_KEY=...
+LLM_BASE_URL=https://provider.example.com/openai/v1
+LLM_MODEL=...
+```
+
+Se `LLM_PROVIDER` non e impostato, il backend prova ad autodetectare la chiave
+presente con questa priorita: `GROQ_API_KEY`, poi `GEMINI_API_KEY`, poi
+`OPENAI_API_KEY`, infine `LLM_API_KEY` con `LLM_BASE_URL`.
+Durante una chiamata chat, se il provider primario fallisce per quota, rate limit,
+errore temporaneo o chiave non valida, l'agente prova il fallback successivo
+configurato nella stessa catena.
+Per una consegna tecnica, e comunque preferibile impostare `LLM_PROVIDER`
+esplicitamente.
 
 I documenti di consegna sono in `docs/`:
 
@@ -59,8 +93,8 @@ Apri `http://127.0.0.1:8000`, oppure esegui `make stop` prima di riavviarla.
 
 ## Cosa provare
 
-- Approva il trasferimento predefinito da EUR 300 verso `Emergency_Fund`.
-- Cambia l'importo a EUR 500 e visualizza/approva l'anteprima.
+- Approva il trasferimento dinamico proposto verso `Emergency_Fund`.
+- Cambia l'importo e visualizza/approva l'anteprima.
 - Cambia l'importo a EUR 750 e osserva il blocco deterministico con MFA.
 - Apri il pannello di grounding per vedere policy attive e obsolete.
 - Chiedi in chat: `Quanto ho speso in sport di recente?`

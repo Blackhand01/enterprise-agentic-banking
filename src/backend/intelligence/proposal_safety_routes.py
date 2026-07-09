@@ -39,10 +39,3 @@ def known_expenses_blocked_route() -> dict[str, Any]:
         "required_next_step": "REVIEW_CASHFLOW",
         "reason_codes": ["known_expenses_not_covered_after_action"],
     }
-
-
-def event_scenario(event: dict[str, Any] | None) -> str | None:
-    if not event:
-        return None
-    tool_result = event.get("tool_result", {})
-    return tool_result.get("scenario") if isinstance(tool_result, dict) else None

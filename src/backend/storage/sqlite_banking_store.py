@@ -143,3 +143,16 @@ class SQLiteBankingStore:
             category=category,
             display_name=display_name,
         )
+
+    def inject_sandbox_state(
+        self,
+        *,
+        checking_balance: float,
+        emergency_balance: float,
+        upcoming_expenses: float,
+    ) -> dict[str, Any]:
+        return self.write.inject_sandbox_state(
+            checking_balance=checking_balance,
+            emergency_balance=emergency_balance,
+            upcoming_expenses=upcoming_expenses,
+        )
