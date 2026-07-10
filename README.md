@@ -28,7 +28,15 @@ The prototype keeps reasoning, authorization, execution, and audit separate.
 - Guardrails decide whether a transfer is allowed, approval-gated, step-up-gated, or blocked.
 - JSON audit logs preserve local demo traces for review.
 
-The dashboard, proposal flow, guardrails, and transfer execution work without external services. The chat experience requires an OpenAI-compatible LLM provider in `.env` or the shell environment.
+The dashboard, proposal flow, guardrails, and transfer execution work without external services. The chat experience needs one configured LLM key in `.env` or the shell environment:
+
+```bash
+GROQ_API_KEY=""
+OPENAI_API_KEY=""
+GEMINI_API_KEY=""
+```
+
+Only one key is required; if more than one is present, the backend auto-selects and falls back across configured providers.
 
 ## Quick Start
 
