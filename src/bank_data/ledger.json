@@ -45,7 +45,9 @@
       "date": "2026-07-07",
       "merchant": "Nordic Homes Rent",
       "amount": -950.0,
-      "category": "affitto"
+      "category": "affitto",
+      "display_name": "Pagamento affitto casa presso Nordic Homes Rent",
+      "retrieval_text": "Home housing household rent expense payment at Nordic Homes Rent"
     },
     {
       "transaction_id": "txn_20260706_grocery_001",
@@ -69,7 +71,9 @@
       "date": "2026-07-04",
       "merchant": "ProSki Shop",
       "amount": -150.0,
-      "category": "sport"
+      "category": "sport",
+      "display_name": "Acquisto attrezzatura sci e montagna presso ProSki Shop",
+      "retrieval_text": "Ski and mountain equipment purchase at ProSki Shop"
     },
     {
       "transaction_id": "txn_20260703_transport_001",
@@ -125,7 +129,9 @@
       "date": "2026-06-28",
       "merchant": "Trail Running Store",
       "amount": -100.0,
-      "category": "sport"
+      "category": "sport",
+      "display_name": "Acquisto attrezzatura trekking e trail running presso Trail Running Store",
+      "retrieval_text": "Trekking and trail running equipment purchase at Trail Running Store"
     }
   ],
   "scheduled_transactions": [

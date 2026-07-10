@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from .external_expense_command import record_external_expense
-from .external_income_command import record_external_income
-from .internal_transfer_command import execute_internal_transfer
-from .sandbox_state_command import inject_sandbox_state
-from .sqlite_connection import SQLiteConnectionProvider
+from .commands import (
+    execute_internal_transfer,
+    inject_sandbox_state,
+    record_external_expense,
+    record_external_income,
+)
+from .schema_seed import SQLiteConnectionProvider
 
 
 class CustomerBankingWriteStore:
@@ -101,7 +103,9 @@ class CustomerBankingWriteStore:
 
             updated = dict(current)
             if autonomous_transfer_limit_eur is not None:
-                updated["autonomous_transfer_limit_eur"] = float(autonomous_transfer_limit_eur)
+                updated["autonomous_transfer_limit_eur"] = float(
+                    autonomous_transfer_limit_eur
+                )
             if minimum_cash_buffer_eur is not None:
                 updated["minimum_cash_buffer_eur"] = float(minimum_cash_buffer_eur)
             if surplus_investment_ratio is not None:

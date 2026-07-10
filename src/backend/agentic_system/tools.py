@@ -45,6 +45,8 @@ class BankingToolExecutor:
             return self.fetch_transactions(
                 category=validated_args.category,
                 search_query=validated_args.search_query,
+                date_from=validated_args.date_from,
+                date_to=validated_args.date_to,
             )
 
         if tool_name == "get_balance_summary":
@@ -53,6 +55,9 @@ class BankingToolExecutor:
         if tool_name == "get_customer_context":
             return self.get_customer_context()
 
+        if tool_name == "get_spending_summary":
+            return self.get_spending_summary()
+
         if tool_name == "execute_transfer":
             return self.execute_transfer(
                 recipient=validated_args.recipient,
@@ -60,7 +65,9 @@ class BankingToolExecutor:
                 operation_id=validated_args.operation_id,
             )
 
-        return json.dumps({"status": "ERROR", "reason": "UNKNOWN_TOOL", "tool": tool_name})
+        return json.dumps(
+            {"status": "ERROR", "reason": "UNKNOWN_TOOL", "tool": tool_name}
+        )
 
     def get_balance_summary(self) -> str:
         """Return customer account balances from the SQLite system of record."""
@@ -70,22 +77,66 @@ class BankingToolExecutor:
     def get_customer_context(self) -> str:
         """Return verified customer context for planning and explanation."""
 
-        return json.dumps(self.repository.customer_context_summary(), ensure_ascii=False)
+        return json.dumps(
+            self.repository.customer_context_summary(), ensure_ascii=False
+        )
 
-    def fetch_transactions(self, category: str, search_query: str | None = None) -> str:
+    def get_spending_summary(self) -> str:
+        """Return a deterministic summary of recent customer expenses."""
+
+        transactions = self.repository.transactions(limit=12)
+        expenses = [
+            transaction
+            for transaction in transactions
+            if float(transaction.get("amount", 0.0)) < 0
+        ]
+        total_spent = round(abs(sum(float(item["amount"]) for item in expenses)), 2)
+        return json.dumps(
+            {
+                "status": "OK",
+                "currency": "EUR",
+                "period": "recent_transactions",
+                "count": len(expenses),
+                "total_spent": total_spent,
+                "transactions": expenses,
+            },
+            ensure_ascii=False,
+        )
+
+    def fetch_transactions(
+        self,
+        category: str | None = None,
+        search_query: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+    ) -> str:
         """Grounded semantic ledger lookup by transaction category and query intent."""
 
-        normalized_category = category.strip().lower()
-        matches = self.repository.transactions_by_category(normalized_category)
+        matches = (
+            self.repository.transactions_for_semantic_search()
+            if search_query
+            else self.repository.transactions_by_category(category or "")
+        )
         retriever = SemanticTransactionRetriever(matches)
-        filtered_matches = retriever.semantic_search(search_query)
-        status = "OK" if filtered_matches or not search_query else "NO_DATA"
+        filtered_matches = [
+            _customer_safe_transaction(transaction)
+            for transaction in retriever.semantic_search(search_query)
+        ]
+        filtered_matches = _filter_transactions_by_date(
+            filtered_matches,
+            date_from=date_from,
+            date_to=date_to,
+        )
+        status = "OK" if filtered_matches else "NO_DATA"
 
         return json.dumps(
             {
                 "status": status,
                 "category": category,
                 "search_query": search_query,
+                "date_from": date_from,
+                "date_to": date_to,
+                "scope": "semantic_ledger" if search_query else "category",
                 "count": len(filtered_matches),
                 "unfiltered_count": len(matches),
                 "similarity_threshold": retriever.threshold,
@@ -107,7 +158,9 @@ class BankingToolExecutor:
         decision = evaluate_transfer_guardrail(
             recipient=recipient,
             amount=amount,
-            autonomous_transfer_limit_eur=financial_rules["autonomous_transfer_limit_eur"],
+            autonomous_transfer_limit_eur=financial_rules[
+                "autonomous_transfer_limit_eur"
+            ],
         )
         if decision.get("status") != "ALLOWED":
             return json.dumps(decision)
@@ -120,3 +173,31 @@ class BankingToolExecutor:
             amount=amount,
         )
         return json.dumps(result, ensure_ascii=False)
+
+
+def _customer_safe_transaction(transaction: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: value
+        for key, value in transaction.items()
+        if key not in {"retrieval_text", "retrieval_query"}
+    }
+
+
+def _filter_transactions_by_date(
+    transactions: list[dict[str, Any]],
+    *,
+    date_from: str | None,
+    date_to: str | None,
+) -> list[dict[str, Any]]:
+    if not date_from and not date_to:
+        return transactions
+
+    filtered = []
+    for transaction in transactions:
+        date = str(transaction.get("date", ""))
+        if date_from and date < date_from:
+            continue
+        if date_to and date > date_to:
+            continue
+        filtered.append(transaction)
+    return filtered

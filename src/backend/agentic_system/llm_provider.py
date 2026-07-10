@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 try:
@@ -43,6 +44,8 @@ class LLMProviderConfig:
 def build_chat_client() -> tuple[Any, LLMProviderConfig]:
     """Build an OpenAI-compatible client for OpenAI, Groq, Gemini or custom APIs."""
 
+    load_dotenv_if_present()
+
     if OpenAI is None:
         raise RuntimeError(
             "The 'openai' package is required for LLM provider access. "
@@ -56,7 +59,7 @@ def build_chat_client() -> tuple[Any, LLMProviderConfig]:
             f"Missing {config.api_key_env} environment variable for provider {config.provider}."
         )
 
-    kwargs: dict[str, Any] = {"api_key": api_key}
+    kwargs: dict[str, Any] = {"api_key": api_key, "max_retries": 0, "timeout": 20.0}
     if config.base_url:
         kwargs["base_url"] = config.base_url
     return OpenAI(**kwargs), config
@@ -64,6 +67,8 @@ def build_chat_client() -> tuple[Any, LLMProviderConfig]:
 
 def build_chat_client_for_config(config: LLMProviderConfig) -> Any:
     """Build a client for an already resolved provider config."""
+
+    load_dotenv_if_present()
 
     if OpenAI is None:
         raise RuntimeError(
@@ -77,19 +82,22 @@ def build_chat_client_for_config(config: LLMProviderConfig) -> Any:
             f"Missing {config.api_key_env} environment variable for provider {config.provider}."
         )
 
-    kwargs: dict[str, Any] = {"api_key": api_key}
+    kwargs: dict[str, Any] = {"api_key": api_key, "max_retries": 0, "timeout": 20.0}
     if config.base_url:
         kwargs["base_url"] = config.base_url
     return OpenAI(**kwargs)
 
 
 def resolve_provider_config() -> LLMProviderConfig:
+    load_dotenv_if_present()
     provider, api_key_env = _selected_provider_and_key_env()
     return _provider_config(provider, api_key_env)
 
 
 def fallback_provider_configs(primary: LLMProviderConfig) -> list[LLMProviderConfig]:
     """Return configured fallback providers after the selected primary provider."""
+
+    load_dotenv_if_present()
 
     if os.environ.get("LLM_PROVIDER"):
         return []
@@ -116,7 +124,9 @@ def _provider_config(provider: str, api_key_env: str) -> LLMProviderConfig:
         else BASE_URLS.get(provider)
     )
     if provider == "openai_compatible" and not base_url:
-        raise RuntimeError("LLM_BASE_URL is required when LLM_PROVIDER=openai_compatible.")
+        raise RuntimeError(
+            "LLM_BASE_URL is required when LLM_PROVIDER=openai_compatible."
+        )
     return LLMProviderConfig(
         provider=provider,
         model=model,
@@ -131,7 +141,9 @@ def _selected_provider_and_key_env() -> tuple[str, str]:
         normalized = explicit.strip().lower().replace("-", "_")
         if normalized not in API_KEY_ENV:
             supported = ", ".join(sorted(API_KEY_ENV))
-            raise RuntimeError(f"Unsupported LLM_PROVIDER={explicit}. Supported: {supported}.")
+            raise RuntimeError(
+                f"Unsupported LLM_PROVIDER={explicit}. Supported: {supported}."
+            )
         return normalized, API_KEY_ENV[normalized]
 
     if os.environ.get("GROQ_API_KEY"):
@@ -143,3 +155,46 @@ def _selected_provider_and_key_env() -> tuple[str, str]:
     if os.environ.get("LLM_API_KEY") and os.environ.get("LLM_BASE_URL"):
         return "openai_compatible", "LLM_API_KEY"
     return "groq", "GROQ_API_KEY"
+
+
+_DOTENV_LOADED = False
+
+
+def load_dotenv_if_present() -> None:
+    """Load local .env values without overriding exported environment variables."""
+
+    global _DOTENV_LOADED
+    if _DOTENV_LOADED:
+        return
+
+    for candidate in _candidate_dotenv_paths():
+        if not candidate.exists():
+            continue
+        for raw_line in candidate.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            if not key or key in os.environ:
+                continue
+            os.environ[key] = _clean_dotenv_value(value)
+        break
+
+    _DOTENV_LOADED = True
+
+
+def _candidate_dotenv_paths() -> list[Path]:
+    module_path = Path(__file__).resolve()
+    return [
+        Path.cwd() / ".env",
+        module_path.parents[3] / ".env",
+        module_path.parents[2] / ".env",
+    ]
+
+
+def _clean_dotenv_value(value: str) -> str:
+    cleaned = value.strip()
+    if "#" in cleaned and not cleaned.startswith(("'", '"')):
+        cleaned = cleaned.split("#", 1)[0].strip()
+    return cleaned.strip('"').strip("'")

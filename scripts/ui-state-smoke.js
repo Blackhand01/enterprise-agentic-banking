@@ -1,9 +1,12 @@
-const fs = require("fs");
-const vm = require("vm");
+import { pathToFileURL } from "url";
 
 class ClassList {
   constructor() {
     this.values = new Set();
+  }
+
+  add(name) {
+    this.values.add(name);
   }
 
   toggle(name, enabled) {
@@ -45,26 +48,29 @@ const staticIds = [
   "cashflow-supervisor",
   "chat-box",
   "chat-button",
+  "chat-close",
+  "chat-drawer",
   "chat-input",
+  "chat-toggle",
   "customer-result",
+  "deep-dive-close",
   "deep-dive-content",
+  "deep-dive-panel",
   "deep-dive-toggle",
   "financial-rules-settings",
   "goal-summary",
+  "insights-close",
+  "insights-content",
+  "insights-panel",
+  "insights-toggle",
   "inspector",
-  "inspector-close",
-  "inspector-toggle",
-  "recent-transactions",
   "sandbox-apply-button",
   "sandbox-checking-balance",
+  "sandbox-close",
   "sandbox-emergency-balance",
   "sandbox-result",
+  "sandbox-toggle",
   "sandbox-upcoming-expenses",
-  "tab-audit",
-  "tab-context",
-  "tab-execution",
-  "tab-policies",
-  "tab-raw",
   "user-name",
 ];
 
@@ -86,6 +92,20 @@ const baseProposal = {
   projected_expense_buffer: 2990.1,
   projected_goal_progress: 35,
   rationale: ["Il planner ha verificato saldo, spese note e obiettivo."],
+  reasoning_trace: [
+    {
+      step: "Analisi_Contesto",
+      title: "Analisi contesto",
+      summary: "Ho letto saldo, spese e fondo emergenze.",
+      facts: [{ label: "Saldo disponibile", value: 4250, unit: "EUR" }],
+    },
+    {
+      step: "Verifica_Compliance",
+      title: "Verifica safety",
+      summary: "La route richiede approvazione cliente.",
+      facts: [{ label: "Route rischio", value: "APPROVAL_REQUIRED" }],
+    },
+  ],
   reason: "Spostamento verso una destinazione interna esistente.",
   recipient: "Emergency_Fund",
   recommended_action: "Spostare 500.00 EUR",
@@ -204,52 +224,135 @@ function maintainPaceState() {
   };
 }
 
+function reverseTransferState() {
+  return {
+    ...baseState,
+    accounts: [
+      { name: "Checking", balance: 650, available_balance: 650 },
+      { name: "Emergency_Fund", balance: 3000, target_balance: 10000 },
+    ],
+    proposal: {
+      ...baseProposal,
+      action_type: "TRANSFER_REVERSE",
+      amount: 860,
+      available_balance: 650,
+      emergency_balance: 3000,
+      projected_checking_balance: 1510,
+      projected_emergency_balance: 2140,
+      projected_expense_buffer: 750,
+      projected_goal_progress: 21,
+      recipient: "Checking",
+      route: "APPROVAL_REQUIRED",
+      source: "Emergency_Fund",
+      title: "Allerta liquidita: recupero necessario",
+    },
+  };
+}
+
+function reviewCashflowState() {
+  return {
+    ...baseState,
+    accounts: [
+      { name: "Checking", balance: 1509.9, available_balance: 1509.9 },
+      { name: "Emergency_Fund", balance: 3200.2, target_balance: 10000 },
+    ],
+    proposal: {
+      ...baseProposal,
+      action_type: "REVIEW_CASHFLOW",
+      amount: 0,
+      available_balance: 1509.9,
+      emergency_balance: 3200.2,
+      projected_checking_balance: 1509.9,
+      projected_emergency_balance: 3200.2,
+      projected_expense_buffer: 750,
+      projected_goal_progress: 32,
+      route: "REVIEW_REQUIRED",
+      required_next_step: "CUSTOMER_REVIEW",
+      title: "Mantieni liquidita sul conto",
+      recommended_action:
+        "Non spostare fondi ora: il margine minimo configurato dal cliente assorbe la liquidita disponibile dopo le spese note.",
+    },
+    emergency_goal_projection: {
+      ...baseState.emergency_goal_projection,
+      current_balance: 3200.2,
+      current_progress: 32,
+      gap: 6799.8,
+    },
+    cashflow_forecast: {
+      ...baseState.cashflow_forecast,
+      known_expenses_total: 759.9,
+    },
+  };
+}
+
+function occurrences(text, needle) {
+  return text.split(needle).length - 1;
+}
+
 async function runUiState(stateFixture, assertion) {
   const elements = Object.fromEntries(staticIds.map((id) => [id, new Element(id)]));
   const classElements = {
     ".deep-dive-panel": new Element("deep-dive-panel"),
   };
-  const tabElements = ["context", "policies", "execution", "audit", "raw"].map((name) => {
-    const element = new Element(`tab-${name}-button`);
-    element.dataset.tab = name;
-    return element;
-  });
-  const tabPanels = ["context", "policies", "execution", "audit", "raw"].map((name) => {
-    const element = elements[`tab-${name}`];
-    element.id = `tab-${name}`;
-    return element;
-  });
-
   const document = {
     body: new Element("body"),
     createElement: () => new Element(),
     getElementById: (id) => elements[id] || null,
     querySelector: (selector) => classElements[selector] || new Element(selector),
     querySelectorAll: (selector) => {
-      if (selector === ".tab") return tabElements;
-      if (selector === ".tab-panel") return tabPanels;
       return [];
     },
   };
 
   const context = {
-    console,
-    document,
-    fetch: async () => ({
-      ok: true,
-      json: async () => stateFixture,
-    }),
-    Intl,
     window: {
       clearTimeout,
       setTimeout,
     },
   };
 
-  vm.createContext(context);
-  vm.runInContext(fs.readFileSync("src/frontend/app.js", "utf8"), context);
+  global.console = console;
+  global.document = document;
+  global.fetch = async () => ({
+    ok: true,
+    json: async () => stateFixture,
+  });
+  global.Intl = Intl;
+  global.window = context.window;
+
+  const appUrl = pathToFileURL(`${process.cwd()}/src/frontend/app.js`);
+  appUrl.search = `ui-smoke=${Date.now()}-${Math.random()}`;
+  await import(appUrl.href);
   await new Promise((resolve) => setTimeout(resolve, 0));
-  await assertion(elements, context);
+  await assertion(elements, context.window);
+}
+
+async function runChatCardSmoke() {
+  const chatBox = new Element("chat-box");
+  const elements = {
+    "chat-box": chatBox,
+    "customer-result": new Element("customer-result"),
+  };
+  global.document = {
+    createElement: () => new Element(),
+    getElementById: (id) => elements[id] || null,
+  };
+  const moduleUrl = pathToFileURL(`${process.cwd()}/src/frontend/components.js`);
+  moduleUrl.search = `chat-smoke=${Date.now()}-${Math.random()}`;
+  const { renderChatToolCard } = await import(moduleUrl.href);
+  renderChatToolCard({
+    status: "NO_DATA",
+    search_query: "quanto ho speso in mare?",
+    count: 0,
+    transactions: [],
+  });
+  const card = chatBox.children[0];
+  if (!card || !card.innerHTML.includes("0 movimenti trovati")) {
+    throw new Error("NO_DATA chat tool card missing");
+  }
+  if (!card.classList.values.has("empty")) {
+    throw new Error("NO_DATA chat tool card is not marked empty");
+  }
 }
 
 async function main() {
@@ -258,8 +361,12 @@ async function main() {
     if (!inboxHtml.includes("Aumenta il fondo emergenze")) {
       throw new Error("Pending inbox summary missing");
     }
-    if (inboxHtml.includes("transition-table") || inboxHtml.includes("amount-input")) {
-      throw new Error("Pending inbox renders simulation or controls before expansion");
+    if (
+      inboxHtml.includes("transition-table")
+      || inboxHtml.includes("amount-input")
+      || inboxHtml.includes("Ragionamento agente")
+    ) {
+      throw new Error("Pending inbox renders detail content before expansion");
     }
     if (!elements["financial-rules-settings"].innerHTML.includes("Imposta limite")) {
       throw new Error("Financial rules settings panel missing");
@@ -271,20 +378,115 @@ async function main() {
       throw new Error("Sandbox upcoming expenses input was not initialized");
     }
     const cashflowHtml = elements["cashflow-supervisor"].innerHTML;
-    if (!cashflowHtml.includes("liquidity-bar") || !cashflowHtml.includes("Spese bloccate")) {
+    if (!cashflowHtml.includes("liquidity-bar")) {
       throw new Error("Liquidity gauge missing");
     }
-    if (!cashflowHtml.includes("FiberNet") || !cashflowHtml.includes("upcoming-event")) {
-      throw new Error("Upcoming events list missing");
+    if (
+      !cashflowHtml.includes("Uscite 30g")
+      || !cashflowHtml.includes("Margine ora")
+      || !cashflowHtml.includes("Dopo proposta")
+      || !cashflowHtml.includes("liquidity-marker")
+    ) {
+      throw new Error("Cashflow dashboard is missing the supervisor summary");
     }
     if (cashflowHtml.includes("<svg")) {
       throw new Error("Cashflow still renders an SVG chart");
     }
+    if (
+      cashflowHtml.includes("Spese bloccate")
+      || cashflowHtml.includes("Margine libero")
+      || cashflowHtml.includes("upcoming-event")
+      || cashflowHtml.includes("Saldo disponibile attuale")
+      || cashflowHtml.includes("Margine attuale")
+      || cashflowHtml.includes("Proposta agente")
+      || cashflowHtml.includes("Recupero proposto")
+    ) {
+      throw new Error("Cashflow renders redundant liquidity details");
+    }
+    if (cashflowHtml.includes("cashflow-facts") || cashflowHtml.includes("liquidity-breakdown")) {
+      throw new Error("Cashflow renders redundant summary sections");
+    }
+    const app = context.__tcsBankingApp;
+    app.toggleDeepDive(true);
+    if (elements["deep-dive-toggle"].textContent !== "Storico azioni agente") {
+      throw new Error("Action history navbar label should remain stable");
+    }
+    const historyHtml = elements["deep-dive-content"].innerHTML;
+    if (!historyHtml.includes("Storico azioni") && !historyHtml.includes("azioni agente")) {
+      throw new Error("Action history drawer content missing");
+    }
+    if (historyHtml.includes("Andamento saldi") || historyHtml.includes("Spese mensili")) {
+      throw new Error("Action history drawer still contains insights content");
+    }
+    app.toggleInsights(true);
+    if (elements["insights-toggle"].textContent !== "Insights") {
+      throw new Error("Insights navbar label should remain stable");
+    }
+    const insightsHtml = elements["insights-content"].innerHTML;
+    if (!insightsHtml.includes("Andamento saldi") || !insightsHtml.includes("Spese mensili")) {
+      throw new Error("Insights drawer missing trend content");
+    }
+    if (elements["deep-dive-panel"].classList.values.has("open")) {
+      throw new Error("Opening insights did not close action history drawer");
+    }
+    app.toggleChat(true);
+    if (elements["chat-toggle"].textContent !== "Chat") {
+      throw new Error("Chat navbar label should remain stable");
+    }
+    if (!elements["chat-drawer"].classList.values.has("open")) {
+      throw new Error("Chat drawer did not open");
+    }
+    app.toggleInspector(true);
+    if (elements["sandbox-toggle"].textContent !== "⚙️ Imposta Sandbox") {
+      throw new Error("Sandbox navbar label should remain stable");
+    }
+    if (elements["chat-drawer"].classList.values.has("open")) {
+      throw new Error("Opening sandbox did not close chat drawer");
+    }
 
     context.toggleActionInbox();
     inboxHtml = elements["agent-inbox"].innerHTML;
+    if (!inboxHtml.includes("Explainability") || !inboxHtml.includes("Impatto proposta")) {
+      throw new Error("Expanded inbox does not render collapsible panel headers");
+    }
+    if (inboxHtml.includes("transition-table") || inboxHtml.includes("Analisi contesto")) {
+      throw new Error("Expanded inbox renders collapsed panel content by default");
+    }
+    context.toggleExplainabilityPanel();
+    inboxHtml = elements["agent-inbox"].innerHTML;
+    if (!inboxHtml.includes("Analisi contesto")) {
+      throw new Error("Explainability panel did not open");
+    }
+    context.toggleExplainabilityPanel();
+    inboxHtml = elements["agent-inbox"].innerHTML;
+    if (!inboxHtml.includes("Explainability") || inboxHtml.includes("Analisi contesto")) {
+      throw new Error("Explainability panel did not collapse again");
+    }
+    context.toggleImpactPanel();
+    inboxHtml = elements["agent-inbox"].innerHTML;
     if (!inboxHtml.includes("transition-table")) {
-      throw new Error("Expanded inbox does not render the impact simulation");
+      throw new Error("Impact panel did not open");
+    }
+    context.toggleImpactPanel();
+    inboxHtml = elements["agent-inbox"].innerHTML;
+    if (!inboxHtml.includes("Impatto proposta") || inboxHtml.includes("transition-table")) {
+      throw new Error("Impact panel did not collapse again");
+    }
+    context.toggleExplainabilityPanel();
+    context.toggleActionInbox();
+    context.toggleActionInbox();
+    inboxHtml = elements["agent-inbox"].innerHTML;
+    if (inboxHtml.includes("Analisi contesto")) {
+      throw new Error("Reopening inbox did not reset nested panels to collapsed");
+    }
+    if (
+      inboxHtml.includes("Il planner ha ricalcolato")
+      || inboxHtml.includes("L'importo non e fisso")
+    ) {
+      throw new Error("Expanded inbox renders duplicated rationale copy");
+    }
+    if (occurrences(inboxHtml, "Approvazione richiesta") !== 1) {
+      throw new Error("Expanded inbox renders duplicated approval route labels");
     }
     if (!inboxHtml.includes("amount-input") || !inboxHtml.includes("approve-button")) {
       throw new Error("Expanded inbox does not render decision controls");
@@ -311,10 +513,10 @@ async function main() {
     context.toggleActionInbox();
     const inboxHtml = elements["agent-inbox"].innerHTML;
     if (!inboxHtml.includes("Sei perfettamente allineato")) {
-      throw new Error("Maintain pace message missing");
+      throw new Error("Maintain pace reasoning missing");
     }
-    if (!inboxHtml.includes("info-plan-card") || !inboxHtml.includes("Informativo")) {
-      throw new Error("Maintain pace informational card missing");
+    if (inboxHtml.includes("info-plan-card")) {
+      throw new Error("Maintain pace state renders duplicated informational card");
     }
     if (inboxHtml.includes("amount-input") || inboxHtml.includes("approve-button")) {
       throw new Error("Maintain pace state renders transfer controls");
@@ -323,6 +525,40 @@ async function main() {
       throw new Error("Maintain pace state renders transfer impact simulation");
     }
   });
+
+  await runUiState(reverseTransferState(), async (elements, context) => {
+    const app = context.__tcsBankingApp;
+    app.lastTrace = {
+      tool_result: { status: "EXECUTED", amount: 500 },
+      proposal: { amount: 500, action_type: "TRANSFER" },
+    };
+    context.toggleActionInbox();
+    const inboxHtml = elements["agent-inbox"].innerHTML;
+    if (!inboxHtml.includes("amount-input") || !inboxHtml.includes("approve-button")) {
+      throw new Error("Reverse transfer pending state does not render decision controls");
+    }
+    if (inboxHtml.includes("OPERAZIONE DI RISPARMIO COMPLETATA")) {
+      throw new Error("Reverse transfer rendered stale executed state");
+    }
+  });
+
+  await runUiState(reviewCashflowState(), async (elements, context) => {
+    const cashflowHtml = elements["cashflow-supervisor"].innerHTML;
+    if (
+      !cashflowHtml.includes("Al buffer minimo")
+      || !cashflowHtml.includes("Decisione agente")
+      || !cashflowHtml.includes("Liquidita preservata")
+    ) {
+      throw new Error("Review cashflow dashboard copy is inconsistent");
+    }
+    context.toggleActionInbox();
+    const inboxHtml = elements["agent-inbox"].innerHTML;
+    if (!inboxHtml.includes("Explainability") || inboxHtml.includes("Analisi contesto")) {
+      throw new Error("Review cashflow inbox does not keep explainability collapsed by default");
+    }
+  });
+
+  await runChatCardSmoke();
 
   console.log("ui state smoke checks passed");
 }

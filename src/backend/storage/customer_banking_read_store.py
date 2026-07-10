@@ -1,10 +1,8 @@
 """Read-only SQLite queries for the customer banking context."""
 
 from __future__ import annotations
-
 from typing import Any
-
-from .sqlite_connection import SQLiteConnectionProvider
+from .schema_seed import SQLiteConnectionProvider
 
 
 class CustomerBankingReadStore:
@@ -32,7 +30,9 @@ class CustomerBankingReadStore:
                 "name": account["name"],
                 "type": account["type"],
                 "balance": account["balance"],
-                "available_balance": account.get("available_balance", account["balance"]),
+                "available_balance": account.get(
+                    "available_balance", account["balance"]
+                ),
                 **(
                     {"target_balance": account["target_balance"]}
                     if "target_balance" in account
@@ -47,7 +47,10 @@ class CustomerBankingReadStore:
             "accounts": normalized_accounts,
             "total_balance": round(sum(account["balance"] for account in accounts), 2),
             "total_available": round(
-                sum(account.get("available_balance", account["balance"]) for account in accounts),
+                sum(
+                    account.get("available_balance", account["balance"])
+                    for account in accounts
+                ),
                 2,
             ),
         }
@@ -97,12 +100,30 @@ class CustomerBankingReadStore:
             rows = connection.execute(
                 """
                 SELECT transaction_id, transfer_id, account_id, date, merchant,
-                       amount, category, display_name, direction
+                       amount, category, display_name, retrieval_text, direction
                 FROM transactions
                 WHERE lower(category) = lower(?)
                 ORDER BY date DESC, created_at DESC, transaction_id DESC
                 """,
                 (category,),
+            ).fetchall()
+        return [_drop_nulls(dict(row)) for row in rows]
+
+    def transactions_for_semantic_search(
+        self, limit: int = 200
+    ) -> list[dict[str, Any]]:
+        with self.connection_provider.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT transaction_id, transfer_id, account_id, date, merchant,
+                       amount, category, display_name, retrieval_text, direction
+                FROM transactions
+                WHERE amount < 0
+                  AND category != 'risparmio'
+                ORDER BY date DESC, created_at DESC, transaction_id DESC
+                LIMIT ?
+                """,
+                (limit,),
             ).fetchall()
         return [_drop_nulls(dict(row)) for row in rows]
 
@@ -159,7 +180,6 @@ class CustomerBankingReadStore:
                 """,
                 (checking["account_id"], limit),
             ).fetchall()
-
         return [_activity_row(dict(row)) for row in rows]
 
     def operation_status(self, operation_id: str) -> dict[str, Any] | None:

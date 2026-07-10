@@ -1,1 +1,0 @@
-"""Prototype source package."""

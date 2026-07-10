@@ -36,6 +36,7 @@ app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 class TransferRequest(BaseModel):
     amount: float = Field(gt=0)
+    action_type: str | None = None
 
 
 class ChatRequest(BaseModel):
@@ -73,7 +74,7 @@ def preview_transfer(request: TransferRequest) -> dict:
 
 @app.post("/api/submit-transfer")
 def submit_transfer(request: TransferRequest) -> dict:
-    return service.submit_transfer(request.amount)
+    return service.submit_transfer(request.amount, action_type=request.action_type)
 
 
 @app.post("/api/chat")
@@ -84,7 +85,11 @@ def chat(request: ChatRequest) -> dict:
 @app.post("/api/financial-rules")
 def update_financial_rules(request: FinancialRulesRequest) -> dict:
     updated = service.update_financial_rules(**request.model_dump(exclude_none=True))
-    return {"status": "OK", "financial_rules": updated, "state": service.dashboard_state()}
+    return {
+        "status": "OK",
+        "financial_rules": updated,
+        "state": service.dashboard_state(),
+    }
 
 
 @app.post("/api/sandbox/inject-state")

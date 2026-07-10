@@ -8,12 +8,19 @@ import sys
 ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR))
 
-from fastapi.testclient import TestClient
+from fastapi.testclient import TestClient  # noqa: E402
 
-from src.backend.agentic_system.agent import BankingAgent
-from src.backend.agentic_system.semantic_transaction_retriever import SemanticTransactionRetriever
-from src.backend.application.customer_chat_service import _assistant_unavailable_message
-from src.backend.main import app, service
+from src.backend.agentic_system.agent import (  # noqa: E402
+    BankingAgent,
+    _extract_month_range,
+    _is_temporal_follow_up,
+)
+from src.backend.agentic_system.semantic_transaction_retriever import (  # noqa: E402
+    RetrievalQueryTranslator,
+    SemanticTransactionRetriever,
+)
+from src.backend.application.services import _assistant_unavailable_message  # noqa: E402
+from src.backend.main import app, service  # noqa: E402
 
 
 class FakeAgent:
@@ -32,16 +39,36 @@ class FakeAgent:
 
 class FakeNoToolAgent:
     def __init__(self) -> None:
-        self.history = [
-            {
-                "role": "tool",
-                "content": '{"status":"OK","category":"sport","count":1,"transactions":[]}',
-            }
-        ]
+        self.history = []
 
     def chat(self, user_input: str) -> str:
         self.history.append({"role": "assistant", "content": "Risposta senza tool."})
         return "Risposta senza tool."
+
+
+class FakeNoDataAgent:
+    def __init__(self) -> None:
+        self.history = []
+
+    def chat(self, user_input: str) -> str:
+        self.history.append(
+            {
+                "role": "tool",
+                "tool_call_id": "call_no_data",
+                "content": json.dumps(
+                    {
+                        "status": "NO_DATA",
+                        "search_query": "quanto ho speso in mare?",
+                        "count": 0,
+                        "transactions": [],
+                    }
+                ),
+            }
+        )
+        return (
+            "Non ho trovato dati. Se hai bisogno di informazioni su altre categorie, "
+            "fammi sapere!"
+        )
 
 
 class FakeEmbeddingModel:
@@ -56,9 +83,9 @@ class FakeEmbeddingModel:
         vectors = []
         for text in texts:
             lowered = text.lower()
-            if "proski" in lowered or "sci" in lowered:
+            if "proski" in lowered or "ski" in lowered or "mountain" in lowered:
                 vectors.append([1.0, 0.0])
-            elif "trail" in lowered or "trekking" in lowered:
+            elif "trail" in lowered or "trekking" in lowered or "hiking" in lowered:
                 vectors.append([0.0, 1.0])
             else:
                 vectors.append([0.0, 0.0])
@@ -76,12 +103,19 @@ def main() -> None:
         assert state.status_code == 200
         payload = state.json()
         assert payload["user"]["first_name"] == "Stefano"
-        assert payload["proposal"]["route"] == "APPROVAL_REQUIRED"
+        assert payload["proposal"]["route"] == "STEP_UP_REQUIRED"
         assert payload["proposal"]["action_type"] == "TRANSFER"
-        assert payload["proposal"]["amount"] == 500.0
-        assert payload["proposal"]["financial_rules"]["surplus_investment_ratio"] == 0.25
-        assert payload["proposal"]["financial_rules"]["minimum_cash_buffer_eur"] == 750.0
-        assert payload["proposal"]["financial_rules"]["autonomous_transfer_limit_eur"] == 500.0
+        assert payload["proposal"]["amount"] == 2450.0
+        assert (
+            payload["proposal"]["financial_rules"]["surplus_investment_ratio"] == 0.25
+        )
+        assert (
+            payload["proposal"]["financial_rules"]["minimum_cash_buffer_eur"] == 750.0
+        )
+        assert (
+            payload["proposal"]["financial_rules"]["autonomous_transfer_limit_eur"]
+            == 500.0
+        )
         assert "user_goal" in payload
         assert payload["user_goal"]["target_months"] == 18
         assert payload["emergency_goal_projection"]["target_balance"] == 10000.0
@@ -99,11 +133,23 @@ def main() -> None:
         assert "Contesto bancario fornito all'agente" in evidence_groups
         assert "Decisione Safety and Approval" in evidence_groups
         assert len(payload["policies"]["stale"]) == 1
+        assert _extract_month_range("e a giugno 2026 ?") == (
+            "2026-06-01",
+            "2026-06-30",
+        )
+        assert _extract_month_range("nel luglio 2026") == (
+            "2026-07-01",
+            "2026-07-31",
+        )
+        assert _is_temporal_follow_up("e a giugno 2026 ?") is True
+        assert _is_temporal_follow_up("Quanto ho speso a giugno 2026?") is False
         initial_checking = next(
             account for account in payload["accounts"] if account["name"] == "Checking"
         )
         initial_emergency = next(
-            account for account in payload["accounts"] if account["name"] == "Emergency_Fund"
+            account
+            for account in payload["accounts"]
+            if account["name"] == "Emergency_Fund"
         )
 
         preview = client.post("/api/preview-transfer", json={"amount": 750}).json()
@@ -114,18 +160,25 @@ def main() -> None:
             json={"autonomous_transfer_limit_eur": 800},
         ).json()
         assert updated_rules["status"] == "OK"
-        assert updated_rules["financial_rules"]["autonomous_transfer_limit_eur"] == 800.0
+        assert (
+            updated_rules["financial_rules"]["autonomous_transfer_limit_eur"] == 800.0
+        )
         assert (
             updated_rules["state"]["proposal"]["financial_rules"][
                 "autonomous_transfer_limit_eur"
             ]
             == 800.0
         )
-        assert updated_rules["state"]["user"]["risk_thresholds"][
-            "autonomous_transfer_limit_eur"
-        ] == 800.0
-        assert updated_rules["state"]["proposal"]["amount"] == 700.0
-        dynamic_preview = client.post("/api/preview-transfer", json={"amount": 750}).json()
+        assert (
+            updated_rules["state"]["user"]["risk_thresholds"][
+                "autonomous_transfer_limit_eur"
+            ]
+            == 800.0
+        )
+        assert updated_rules["state"]["proposal"]["amount"] == 2450.0
+        dynamic_preview = client.post(
+            "/api/preview-transfer", json={"amount": 750}
+        ).json()
         assert dynamic_preview["proposal"]["route"] == "APPROVAL_REQUIRED"
 
         service.reset_data()
@@ -134,18 +187,30 @@ def main() -> None:
             account for account in payload["accounts"] if account["name"] == "Checking"
         )
         initial_emergency = next(
-            account for account in payload["accounts"] if account["name"] == "Emergency_Fund"
+            account
+            for account in payload["accounts"]
+            if account["name"] == "Emergency_Fund"
         )
 
-        default_executed = client.post("/api/submit-transfer", json={"amount": 500}).json()
+        default_amount = payload["proposal"]["amount"]
+        default_action_type = payload["proposal"]["action_type"]
+        default_executed = client.post(
+            "/api/submit-transfer",
+            json={"amount": default_amount, "action_type": default_action_type},
+        ).json()
         assert default_executed["tool_result"]["status"] == "EXECUTED"
         executed_state = client.get("/api/state").json()
-        assert executed_state["proposal"]["already_executed"] is True
-        assert executed_state["proposal"]["route"] == "ALREADY_EXECUTED"
+        assert executed_state["proposal"]["action_type"] in {
+            "MAINTAIN_PACE",
+            "REVIEW_CASHFLOW",
+        }
+        assert executed_state["proposal"]["amount"] == 0.0
         assert executed_state["emergency_goal_projection"]["agent_action_amount"] == 0.0
         assert executed_state["cashflow_forecast"]["proposed_action_amount"] == 0.0
         assert (
-            executed_state["emergency_goal_projection"]["required_monthly_after_agent_action"]
+            executed_state["emergency_goal_projection"][
+                "required_monthly_after_agent_action"
+            ]
             == executed_state["emergency_goal_projection"]["required_monthly_savings"]
         )
 
@@ -155,7 +220,9 @@ def main() -> None:
             account for account in payload["accounts"] if account["name"] == "Checking"
         )
         initial_emergency = next(
-            account for account in payload["accounts"] if account["name"] == "Emergency_Fund"
+            account
+            for account in payload["accounts"]
+            if account["name"] == "Emergency_Fund"
         )
 
         original_model_cache = SemanticTransactionRetriever._model_cache
@@ -163,6 +230,14 @@ def main() -> None:
             SemanticTransactionRetriever._model_cache = {
                 "sentence-transformers/all-MiniLM-L6-v2": FakeEmbeddingModel()
             }
+            RetrievalQueryTranslator.set_override(
+                lambda query: {
+                    "sci": "ski",
+                    "montagna": "mountain",
+                    "trekking": "trekking",
+                    "mare": "sea",
+                }.get(query.lower(), query)
+            )
             ski_transactions = json.loads(
                 service.tool_executor.execute(
                     "fetch_transactions",
@@ -182,7 +257,97 @@ def main() -> None:
                 )
             )
             assert trekking_transactions["status"] == "OK"
-            assert trekking_transactions["transactions"][0]["merchant"] == "Trail Running Store"
+            assert (
+                trekking_transactions["transactions"][0]["merchant"]
+                == "Trail Running Store"
+            )
+
+            mountain_transactions = json.loads(
+                service.tool_executor.execute(
+                    "fetch_transactions",
+                    {"category": "sport", "search_query": "montagna"},
+                )
+            )
+            assert mountain_transactions["status"] == "OK"
+            assert mountain_transactions["transactions"][0]["merchant"] == "ProSki Shop"
+
+            imperfect_category_transactions = json.loads(
+                service.tool_executor.execute(
+                    "fetch_transactions",
+                    {"category": "spese", "search_query": "montagna"},
+                )
+            )
+            assert imperfect_category_transactions["status"] == "OK"
+            assert imperfect_category_transactions["scope"] == "semantic_ledger"
+            assert (
+                imperfect_category_transactions["transactions"][0]["merchant"]
+                == "ProSki Shop"
+            )
+
+            query_only_transactions = json.loads(
+                service.tool_executor.execute(
+                    "fetch_transactions",
+                    {"search_query": "montagna"},
+                )
+            )
+            assert query_only_transactions["status"] == "OK"
+            assert query_only_transactions["category"] is None
+            assert query_only_transactions["scope"] == "semantic_ledger"
+            assert (
+                query_only_transactions["transactions"][0]["merchant"] == "ProSki Shop"
+            )
+
+            rent_2026_transactions = json.loads(
+                service.tool_executor.execute(
+                    "fetch_transactions",
+                    {
+                        "category": "affitto",
+                        "date_from": "2026-01-01",
+                        "date_to": "2026-12-31",
+                    },
+                )
+            )
+            assert rent_2026_transactions["status"] == "OK"
+            assert rent_2026_transactions["count"] == 1
+            assert (
+                rent_2026_transactions["transactions"][0]["merchant"]
+                == "Nordic Homes Rent"
+            )
+
+            rent_june_transactions = json.loads(
+                service.tool_executor.execute(
+                    "fetch_transactions",
+                    {
+                        "category": "affitto",
+                        "date_from": "2026-06-01",
+                        "date_to": "2026-06-30",
+                    },
+                )
+            )
+            assert rent_june_transactions["status"] == "NO_DATA"
+            assert rent_june_transactions["count"] == 0
+
+            rent_july_transactions = json.loads(
+                service.tool_executor.execute(
+                    "fetch_transactions",
+                    {
+                        "category": "affitto",
+                        "date_from": "2026-07-01",
+                        "date_to": "2026-07-31",
+                    },
+                )
+            )
+            assert rent_july_transactions["status"] == "OK"
+            assert rent_july_transactions["count"] == 1
+
+            wrong_category_transactions = json.loads(
+                service.tool_executor.execute(
+                    "fetch_transactions",
+                    {"category": "montagna"},
+                )
+            )
+            assert wrong_category_transactions["status"] == "NO_DATA"
+            assert wrong_category_transactions["count"] == 0
 
             sea_transactions = json.loads(
                 service.tool_executor.execute(
@@ -194,13 +359,18 @@ def main() -> None:
             assert sea_transactions["count"] == 0
         finally:
             SemanticTransactionRetriever._model_cache = original_model_cache
+            RetrievalQueryTranslator.set_override(None)
 
-        balance_summary = json.loads(service.tool_executor.execute("get_balance_summary", {}))
+        balance_summary = json.loads(
+            service.tool_executor.execute("get_balance_summary", {})
+        )
         assert balance_summary["status"] == "OK"
         assert balance_summary["total_balance"] == 7250.0
         assert len(balance_summary["accounts"]) == 2
 
-        customer_context = json.loads(service.tool_executor.execute("get_customer_context", {}))
+        customer_context = json.loads(
+            service.tool_executor.execute("get_customer_context", {})
+        )
         assert customer_context["status"] == "OK"
         assert customer_context["balance_summary"]["total_balance"] == 7250.0
 
@@ -230,15 +400,25 @@ def main() -> None:
         executed = client.post("/api/submit-transfer", json={"amount": 300}).json()
         assert executed["tool_result"]["status"] == "EXECUTED"
         updated = client.get("/api/state").json()
-        checking = next(account for account in updated["accounts"] if account["name"] == "Checking")
-        emergency = next(
-            account for account in updated["accounts"] if account["name"] == "Emergency_Fund"
+        checking = next(
+            account for account in updated["accounts"] if account["name"] == "Checking"
         )
-        assert checking["available_balance"] == initial_checking["available_balance"] - 300.0
+        emergency = next(
+            account
+            for account in updated["accounts"]
+            if account["name"] == "Emergency_Fund"
+        )
+        assert (
+            checking["available_balance"]
+            == initial_checking["available_balance"] - 300.0
+        )
         assert emergency["balance"] == initial_emergency["balance"] + 300.0
         assert updated["transactions"][0]["transfer_id"] == executed["trace_id"]
         assert updated["transactions"][1]["transfer_id"] == executed["trace_id"]
-        assert updated["customer_activity"][0]["title"] == "Trasferimento al fondo emergenze"
+        assert (
+            updated["customer_activity"][0]["title"]
+            == "Trasferimento al fondo emergenze"
+        )
         assert updated["customer_activity"][0]["amount"] == -300.0
         assert updated["proposal"]["action_type"] in {"TRANSFER", "REVIEW_CASHFLOW"}
 
@@ -246,16 +426,24 @@ def main() -> None:
         assert duplicate["tool_result"]["status"] == "DUPLICATE"
         unchanged = client.get("/api/state").json()
         unchanged_checking = next(
-            account for account in unchanged["accounts"] if account["name"] == "Checking"
+            account
+            for account in unchanged["accounts"]
+            if account["name"] == "Checking"
         )
         unchanged_emergency = next(
-            account for account in unchanged["accounts"] if account["name"] == "Emergency_Fund"
+            account
+            for account in unchanged["accounts"]
+            if account["name"] == "Emergency_Fund"
         )
         assert unchanged_checking["available_balance"] == checking["available_balance"]
         assert unchanged_emergency["balance"] == emergency["balance"]
 
-        blocked = client.post("/api/submit-transfer", json={"amount": 750}).json()
+        blocked = client.post(
+            "/api/submit-transfer",
+            json={"amount": 750, "action_type": "TRANSFER_REVERSE"},
+        ).json()
         assert blocked["tool_result"]["status"] == "BLOCKED"
+        assert blocked["tool_result"]["reason"] == "ACTION_TYPE_MISMATCH"
 
         service.reset_data()
         sandbox = client.post(
@@ -268,7 +456,9 @@ def main() -> None:
         ).json()
         assert sandbox["status"] == "SANDBOX_STATE_INJECTED"
         sandbox_checking = next(
-            account for account in sandbox["state"]["accounts"] if account["name"] == "Checking"
+            account
+            for account in sandbox["state"]["accounts"]
+            if account["name"] == "Checking"
         )
         sandbox_emergency = next(
             account
@@ -280,7 +470,7 @@ def main() -> None:
         assert sandbox["state"]["cashflow_forecast"]["known_expenses_total"] == 760.0
         assert sandbox["state"]["scheduled_transactions"][0]["amount"] == -760.0
         assert sandbox["state"]["proposal"]["action_type"] == "TRANSFER"
-        assert sandbox["state"]["proposal"]["amount"] == 500.0
+        assert sandbox["state"]["proposal"]["amount"] == 5650.0
         assert sandbox["state"]["last_event"] is None
 
         low_liquidity = client.post(
@@ -297,8 +487,59 @@ def main() -> None:
             if account["name"] == "Checking"
         )
         assert low_checking["available_balance"] == 650.0
-        assert low_liquidity["state"]["proposal"]["action_type"] == "REVIEW_CASHFLOW"
-        assert low_liquidity["state"]["proposal"]["route"] == "REVIEW_REQUIRED"
+        assert low_liquidity["state"]["proposal"]["action_type"] == "TRANSFER_REVERSE"
+        assert low_liquidity["state"]["proposal"]["route"] == "APPROVAL_REQUIRED"
+        assert low_liquidity["state"]["proposal"]["source"] == "Emergency_Fund"
+        assert low_liquidity["state"]["proposal"]["recipient"] == "Checking"
+        assert low_liquidity["state"]["proposal"]["amount"] == 1150.0
+        reverse_executed = client.post(
+            "/api/submit-transfer",
+            json={"amount": 1150, "action_type": "TRANSFER_REVERSE"},
+        ).json()
+        assert reverse_executed["tool_result"]["status"] == "EXECUTED"
+        reverse_state = client.get("/api/state").json()
+        reverse_checking = next(
+            account
+            for account in reverse_state["accounts"]
+            if account["name"] == "Checking"
+        )
+        reverse_emergency = next(
+            account
+            for account in reverse_state["accounts"]
+            if account["name"] == "Emergency_Fund"
+        )
+        assert reverse_checking["available_balance"] == 1800.0
+        assert reverse_emergency["balance"] == 1850.0
+        assert reverse_state["proposal"]["action_type"] == "REVIEW_CASHFLOW"
+        assert reverse_state["proposal"]["amount"] == 0.0
+
+        service.reset_data()
+        client.post(
+            "/api/financial-rules",
+            json={"autonomous_transfer_limit_eur": 1100.0},
+        )
+        stable_sandbox = client.post(
+            "/api/sandbox/inject-state",
+            json={
+                "checking_balance": 5000.0,
+                "emergency_balance": 0.0,
+                "upcoming_expenses": 2000.0,
+            },
+        ).json()
+        stable_proposal = stable_sandbox["state"]["proposal"]
+        assert stable_proposal["action_type"] == "TRANSFER"
+        assert stable_proposal["route"] == "STEP_UP_REQUIRED"
+        assert stable_proposal["amount"] == 2000.0
+        assert stable_proposal["projected_expense_buffer"] == 1000.0
+        stable_executed = client.post(
+            "/api/submit-transfer",
+            json={"amount": 2000.0, "action_type": "TRANSFER"},
+        ).json()
+        assert stable_executed["tool_result"]["status"] == "EXECUTED"
+        stable_after = client.get("/api/state").json()
+        assert stable_after["proposal"]["action_type"] == "REVIEW_CASHFLOW"
+        assert stable_after["proposal"]["amount"] == 0.0
+        assert stable_after["proposal"]["projected_expense_buffer"] == 1000.0
 
         service.reset_data()
         with service.repository.connection_provider.connect() as connection:
@@ -329,12 +570,9 @@ def main() -> None:
                 display_name=f"Spesa imprevista test {index}",
             )
         degraded_state = client.get("/api/state").json()
-        assert degraded_state["proposal"]["action_type"] == "REVIEW_CASHFLOW"
-        assert degraded_state["proposal"]["route"] == "REVIEW_REQUIRED"
-        assert degraded_state["proposal"]["required_next_step"] == "CUSTOMER_REVIEW"
-        blocked_cashflow = client.post("/api/submit-transfer", json={"amount": 300}).json()
-        assert blocked_cashflow["tool_result"]["status"] == "BLOCKED"
-        assert blocked_cashflow["tool_result"]["reason"] == "ACTION_NOT_EXECUTABLE"
+        assert degraded_state["proposal"]["action_type"] == "TRANSFER_REVERSE"
+        assert degraded_state["proposal"]["route"] == "APPROVAL_REQUIRED"
+        assert degraded_state["proposal"]["required_next_step"] == "CUSTOMER_APPROVAL"
 
         service.reset_data()
 
@@ -345,6 +583,16 @@ def main() -> None:
         service._banking_agent = FakeNoToolAgent()  # noqa: SLF001
         no_tool_chat = client.post("/api/chat", json={"message": "mare"}).json()
         assert no_tool_chat["tool_result"]["status"] == "NO_TOOL_CALL"
+
+        service._banking_agent = FakeNoDataAgent()  # noqa: SLF001
+        no_data_chat = client.post("/api/chat", json={"message": "mare"}).json()
+        assert no_data_chat["tool_result"]["status"] == "NO_DATA"
+        assert (
+            no_data_chat["answer"]
+            == "Non ho trovato transazioni nel tuo profilo attuale per questa richiesta."
+        )
+        assert "fammi sapere" not in no_data_chat["answer"].lower()
+
         assert "limite di utilizzo del provider LLM" in _assistant_unavailable_message(
             "openai LLM API call failed: Error code: 429 - rate_limit_exceeded"
         )

@@ -1,7 +1,6 @@
-"""Agent inbox read model for proactive recommendations."""
+"""Agent inbox read model."""
 
 from __future__ import annotations
-
 from typing import Any
 
 
@@ -9,7 +8,6 @@ def build_agent_inbox_items(proposal: dict[str, Any]) -> list[dict[str, Any]]:
     status = "completed" if proposal.get("already_executed") else "pending_approval"
     if proposal["route"] == "BLOCKED":
         status = "blocked"
-
     return [
         {
             "id": proposal["proposal_id"],

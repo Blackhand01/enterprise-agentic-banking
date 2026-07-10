@@ -1,1 +1,511 @@
-[]
+[
+  {
+    "trace_id": "trc_19f48e59e3b",
+    "timestamp": "2026-07-10T00:00:35+02:00",
+    "layer_events": [
+      {
+        "layer": "App cliente",
+        "event": "Il cliente ha approvato EUR 2450.00"
+      },
+      {
+        "layer": "Agente AI",
+        "event": "proposta: Aumenta il fondo emergenze"
+      },
+      {
+        "layer": "Contesto bancario",
+        "event": "contesto letto da SQLite"
+      },
+      {
+        "layer": "Idempotenza",
+        "event": "operation_id: prop_transfer_txn_20260708_salary_001_checking_to_emergency_245000"
+      },
+      {
+        "layer": "Sicurezza e approvazione",
+        "event": "percorso: STEP_UP_REQUIRED"
+      },
+      {
+        "layer": "Gateway azioni bancarie",
+        "event": "risultato tool: EXECUTED"
+      },
+      {
+        "layer": "Audit log",
+        "event": "evento persistito"
+      }
+    ],
+    "proposal": {
+      "proposal_id": "prop_transfer_txn_20260708_salary_001_checking_to_emergency_245000",
+      "trace_id": "trc_19f48e59e3d",
+      "action_type": "TRANSFER",
+      "title": "Aumenta il fondo emergenze",
+      "summary": "L'obiettivo attivo e: Raggiungere 10.000 EUR nel fondo emergenze entro 18 mesi.",
+      "recommended_action": "Spostare 2450.00 EUR dal conto corrente al fondo emergenze, mantenendo buffer e margine anti-oscillazione sul conto corrente.",
+      "goal": {
+        "goal_id": "emergency_fund",
+        "description": "Raggiungere 10.000 EUR nel fondo emergenze entro 18 mesi.",
+        "target_months": 18,
+        "risk_preference": "balanced"
+      },
+      "source": "Checking",
+      "recipient": "Emergency_Fund",
+      "amount": 2450.0,
+      "currency": "EUR",
+      "already_executed": false,
+      "executed_operation": null,
+      "salary_detected": {
+        "transaction_id": "txn_20260708_salary_001",
+        "account_id": "acc_checking_001",
+        "date": "2026-07-08",
+        "merchant": "Tata Innovation Hub Payroll",
+        "amount": 3200.0,
+        "category": "stipendio"
+      },
+      "upcoming_expenses_30d": 759.9,
+      "available_balance": 4250.0,
+      "projected_checking_balance": 1800.0,
+      "projected_expense_buffer": 1040.1,
+      "emergency_balance": 3000.0,
+      "projected_emergency_balance": 5450.0,
+      "target_balance": 10000.0,
+      "financial_rules": {
+        "profile_id": "balanced_supervisor",
+        "surplus_investment_ratio": 0.25,
+        "minimum_cash_buffer_eur": 750.0,
+        "autonomous_transfer_limit_eur": 500.0,
+        "transfer_rounding_increment_eur": 50.0
+      },
+      "goal_progress": 30,
+      "projected_goal_progress": 55,
+      "route": "STEP_UP_REQUIRED",
+      "reason": "L'importo supera il limite di trasferimento autonomo.",
+      "reason_codes": [
+        "amount_above_autonomous_limit"
+      ],
+      "required_next_step": "REQUEST_MFA",
+      "trusted_target": true,
+      "evidence": [
+        {
+          "group": "Contesto bancario fornito all'agente",
+          "label": "Saldo disponibile conto corrente",
+          "value": 4250.0,
+          "unit": "EUR",
+          "source": "Read model conti cliente",
+          "purpose": "Usato dall'agente per valutare se esiste liquidita disponibile."
+        },
+        {
+          "group": "Contesto bancario fornito all'agente",
+          "label": "Spese pianificate prossimi 30 giorni",
+          "value": 759.9,
+          "unit": "EUR",
+          "source": "Pagamenti pianificati",
+          "purpose": "Usato dall'agente per evitare proposte che scoprano spese imminenti."
+        },
+        {
+          "group": "Contesto bancario fornito all'agente",
+          "label": "Fondo emergenze attuale",
+          "value": 3000.0,
+          "unit": "EUR",
+          "source": "Read model obiettivi risparmio",
+          "purpose": "Usato dall'agente per verificare che il fondo sia sotto obiettivo."
+        },
+        {
+          "group": "Verifiche deterministiche prima dell'esecuzione",
+          "label": "Saldo previsto dopo proposta",
+          "value": 1800.0,
+          "unit": "EUR",
+          "source": "Controllo saldo post-azione",
+          "purpose": "Calcolo deterministico per verificare l'impatto prima di mostrare la proposta."
+        },
+        {
+          "group": "Verifiche deterministiche prima dell'esecuzione",
+          "label": "Fondo emergenze dopo proposta",
+          "value": 5450.0,
+          "unit": "EUR",
+          "source": "Controllo obiettivo risparmio",
+          "purpose": "Calcolo deterministico dell'impatto sul saving pot."
+        },
+        {
+          "group": "Piano proposto dall'agente",
+          "label": "Importo proposto",
+          "value": 2450.0,
+          "unit": "EUR",
+          "source": "Piano agente basato sul contesto verificato",
+          "purpose": "Azione candidata: spostare liquidita verso una destinazione fidata."
+        },
+        {
+          "group": "Decisione Safety and Approval",
+          "label": "Route di rischio",
+          "value": "STEP_UP_REQUIRED",
+          "unit": "route",
+          "source": "Risk engine deterministico",
+          "purpose": "Il modello non decide l'autorizzazione: la route e calcolata da regole testabili."
+        }
+      ],
+      "reasoning_trace": [
+        {
+          "step": "Analisi_Contesto",
+          "title": "Analisi contesto",
+          "summary": "Ho letto saldo conto corrente, fondo emergenze e spese pianificate prima di proporre qualsiasi movimento.",
+          "facts": [
+            {
+              "label": "Saldo disponibile",
+              "value": 4250.0,
+              "unit": "EUR"
+            },
+            {
+              "label": "Spese note 30 giorni",
+              "value": 759.9,
+              "unit": "EUR"
+            },
+            {
+              "label": "Fondo emergenze attuale",
+              "value": 3000.0,
+              "unit": "EUR"
+            }
+          ]
+        },
+        {
+          "step": "Valutazione_Obiettivo",
+          "title": "Valutazione obiettivo",
+          "summary": "Raggiungere 10.000 EUR nel fondo emergenze entro 18 mesi.",
+          "facts": [
+            {
+              "label": "Obiettivo fondo",
+              "value": 10000.0,
+              "unit": "EUR"
+            },
+            {
+              "label": "Gap attuale",
+              "value": 7000.0,
+              "unit": "EUR"
+            },
+            {
+              "label": "Gap dopo proposta",
+              "value": 4550.0,
+              "unit": "EUR"
+            }
+          ]
+        },
+        {
+          "step": "Logica_Decisionale",
+          "title": "Logica decisionale",
+          "summary": "Spostare 2450.00 EUR dal conto corrente al fondo emergenze, mantenendo buffer e margine anti-oscillazione sul conto corrente.",
+          "facts": [
+            {
+              "label": "Azione",
+              "value": "TRANSFER"
+            },
+            {
+              "label": "Importo",
+              "value": 2450.0,
+              "unit": "EUR"
+            },
+            {
+              "label": "Saldo previsto conto",
+              "value": 1800.0,
+              "unit": "EUR"
+            }
+          ]
+        },
+        {
+          "step": "Verifica_Compliance",
+          "title": "Verifica safety",
+          "summary": "L'importo supera il limite di trasferimento autonomo.",
+          "facts": [
+            {
+              "label": "Route rischio",
+              "value": "STEP_UP_REQUIRED"
+            },
+            {
+              "label": "Prossimo passo",
+              "value": "REQUEST_MFA"
+            },
+            {
+              "label": "Margine dopo spese note",
+              "value": 1040.1,
+              "unit": "EUR"
+            }
+          ]
+        }
+      ],
+      "rationale": [
+        "Il planner sposta l'eccesso sopra spese note, buffer e margine anti-oscillazione.",
+        "L'importo non e frazionato in micro-proposte successive.",
+        "La destinazione e il fondo emergenze, coerente con l'obiettivo dichiarato."
+      ]
+    },
+    "tool_result": {
+      "status": "EXECUTED",
+      "recipient": "Emergency_Fund",
+      "amount": 2450.0,
+      "currency": "EUR",
+      "execution_mode": "SQLITE_COMMITTED",
+      "operation_id": "prop_transfer_txn_20260708_salary_001_checking_to_emergency_245000",
+      "transfer_id": "trc_19f48e59e3b",
+      "debit_transaction_id": "txn_2026-07-10_agent_savings_out_19f48e59e3b",
+      "credit_transaction_id": "txn_2026-07-10_agent_savings_in_19f48e59e3b"
+    },
+    "metrics": {
+      "trace_id": "trc_19f48e59e3b",
+      "latency_ms": 6,
+      "tokens_estimated": 0,
+      "tool_calls": 1,
+      "tool_failures": 0,
+      "timed_out": false
+    }
+  },
+  {
+    "trace_id": "trc_19f48e63f1f",
+    "timestamp": "2026-07-10T00:01:16+02:00",
+    "layer_events": [
+      {
+        "layer": "App cliente",
+        "event": "Il cliente ha approvato EUR 1600.00"
+      },
+      {
+        "layer": "Agente AI",
+        "event": "proposta: 🔴 Allerta Liquidita: Necessario Recupero"
+      },
+      {
+        "layer": "Contesto bancario",
+        "event": "contesto letto da SQLite"
+      },
+      {
+        "layer": "Idempotenza",
+        "event": "operation_id: prop_transfer_reverse_txn_20260708_salary_001_emergency_to_checking_160000"
+      },
+      {
+        "layer": "Sicurezza e approvazione",
+        "event": "percorso: APPROVAL_REQUIRED"
+      },
+      {
+        "layer": "Gateway azioni bancarie",
+        "event": "risultato tool: EXECUTED"
+      },
+      {
+        "layer": "Audit log",
+        "event": "evento persistito"
+      }
+    ],
+    "proposal": {
+      "proposal_id": "prop_transfer_reverse_txn_20260708_salary_001_emergency_to_checking_160000",
+      "trace_id": "trc_19f48e63f23",
+      "action_type": "TRANSFER_REVERSE",
+      "title": "🔴 Allerta Liquidita: Necessario Recupero",
+      "summary": "L'obiettivo attivo resta: Raggiungere 10.000 EUR nel fondo emergenze entro 18 mesi.",
+      "recommended_action": "Le spese note superano la liquidita attuale. Propongo di ritirare 1600.00 EUR dal Fondo Emergenze per riportare il conto in una banda stabile.",
+      "goal": {
+        "goal_id": "emergency_fund",
+        "description": "Raggiungere 10.000 EUR nel fondo emergenze entro 18 mesi.",
+        "target_months": 18,
+        "risk_preference": "balanced"
+      },
+      "source": "Emergency_Fund",
+      "recipient": "Checking",
+      "amount": 1600.0,
+      "currency": "EUR",
+      "already_executed": false,
+      "executed_operation": null,
+      "salary_detected": {
+        "transaction_id": "txn_20260708_salary_001",
+        "account_id": "acc_checking_001",
+        "date": "2026-07-08",
+        "merchant": "Tata Innovation Hub Payroll",
+        "amount": 3200.0,
+        "category": "stipendio"
+      },
+      "upcoming_expenses_30d": 759.9,
+      "available_balance": 180.0,
+      "projected_checking_balance": 1780.0,
+      "projected_expense_buffer": 1020.1,
+      "emergency_balance": 5450.0,
+      "projected_emergency_balance": 3850.0,
+      "target_balance": 10000.0,
+      "financial_rules": {
+        "profile_id": "balanced_supervisor",
+        "surplus_investment_ratio": 0.25,
+        "minimum_cash_buffer_eur": 750.0,
+        "autonomous_transfer_limit_eur": 500.0,
+        "transfer_rounding_increment_eur": 50.0
+      },
+      "goal_progress": 55,
+      "projected_goal_progress": 38,
+      "route": "APPROVAL_REQUIRED",
+      "reason": "Le spese note superano la liquidita disponibile e il buffer minimo.",
+      "reason_codes": [
+        "checking_deficit_detected",
+        "emergency_fund_rescue_available"
+      ],
+      "required_next_step": "CUSTOMER_APPROVAL",
+      "trusted_target": true,
+      "evidence": [
+        {
+          "group": "Contesto bancario fornito all'agente",
+          "label": "Saldo disponibile conto corrente",
+          "value": 180.0,
+          "unit": "EUR",
+          "source": "Read model conti cliente",
+          "purpose": "Usato dall'agente per valutare se esiste liquidita disponibile."
+        },
+        {
+          "group": "Contesto bancario fornito all'agente",
+          "label": "Spese pianificate prossimi 30 giorni",
+          "value": 759.9,
+          "unit": "EUR",
+          "source": "Pagamenti pianificati",
+          "purpose": "Usato dall'agente per evitare proposte che scoprano spese imminenti."
+        },
+        {
+          "group": "Contesto bancario fornito all'agente",
+          "label": "Fondo emergenze attuale",
+          "value": 5450.0,
+          "unit": "EUR",
+          "source": "Read model obiettivi risparmio",
+          "purpose": "Usato dall'agente per verificare che il fondo sia sotto obiettivo."
+        },
+        {
+          "group": "Verifiche deterministiche prima dell'esecuzione",
+          "label": "Saldo previsto dopo proposta",
+          "value": 1780.0,
+          "unit": "EUR",
+          "source": "Controllo saldo post-azione",
+          "purpose": "Calcolo deterministico per verificare l'impatto prima di mostrare la proposta."
+        },
+        {
+          "group": "Verifiche deterministiche prima dell'esecuzione",
+          "label": "Fondo emergenze dopo proposta",
+          "value": 3850.0,
+          "unit": "EUR",
+          "source": "Controllo obiettivo risparmio",
+          "purpose": "Calcolo deterministico dell'impatto sul saving pot."
+        },
+        {
+          "group": "Piano proposto dall'agente",
+          "label": "Importo proposto",
+          "value": 1600.0,
+          "unit": "EUR",
+          "source": "Piano agente basato sul contesto verificato",
+          "purpose": "Azione candidata: recuperare liquidita dal fondo emergenze."
+        },
+        {
+          "group": "Decisione Safety and Approval",
+          "label": "Route di rischio",
+          "value": "APPROVAL_REQUIRED",
+          "unit": "route",
+          "source": "Risk engine deterministico",
+          "purpose": "Il modello non decide l'autorizzazione: la route e calcolata da regole testabili."
+        }
+      ],
+      "reasoning_trace": [
+        {
+          "step": "Analisi_Contesto",
+          "title": "Analisi contesto",
+          "summary": "Ho letto saldo conto corrente, fondo emergenze e spese pianificate prima di proporre qualsiasi movimento.",
+          "facts": [
+            {
+              "label": "Saldo disponibile",
+              "value": 180.0,
+              "unit": "EUR"
+            },
+            {
+              "label": "Spese note 30 giorni",
+              "value": 759.9,
+              "unit": "EUR"
+            },
+            {
+              "label": "Fondo emergenze attuale",
+              "value": 5450.0,
+              "unit": "EUR"
+            }
+          ]
+        },
+        {
+          "step": "Valutazione_Obiettivo",
+          "title": "Valutazione obiettivo",
+          "summary": "Raggiungere 10.000 EUR nel fondo emergenze entro 18 mesi.",
+          "facts": [
+            {
+              "label": "Obiettivo fondo",
+              "value": 10000.0,
+              "unit": "EUR"
+            },
+            {
+              "label": "Gap attuale",
+              "value": 4550.0,
+              "unit": "EUR"
+            },
+            {
+              "label": "Gap dopo proposta",
+              "value": 6150.0,
+              "unit": "EUR"
+            }
+          ]
+        },
+        {
+          "step": "Logica_Decisionale",
+          "title": "Logica decisionale",
+          "summary": "Le spese note superano la liquidita attuale. Propongo di ritirare 1600.00 EUR dal Fondo Emergenze per riportare il conto in una banda stabile.",
+          "facts": [
+            {
+              "label": "Azione",
+              "value": "TRANSFER_REVERSE"
+            },
+            {
+              "label": "Importo",
+              "value": 1600.0,
+              "unit": "EUR"
+            },
+            {
+              "label": "Saldo previsto conto",
+              "value": 1780.0,
+              "unit": "EUR"
+            }
+          ]
+        },
+        {
+          "step": "Verifica_Compliance",
+          "title": "Verifica safety",
+          "summary": "Le spese note superano la liquidita disponibile e il buffer minimo.",
+          "facts": [
+            {
+              "label": "Route rischio",
+              "value": "APPROVAL_REQUIRED"
+            },
+            {
+              "label": "Prossimo passo",
+              "value": "CUSTOMER_APPROVAL"
+            },
+            {
+              "label": "Margine dopo spese note",
+              "value": 1020.1,
+              "unit": "EUR"
+            }
+          ]
+        }
+      ],
+      "rationale": [
+        "Il conto corrente non copre spese pianificate e buffer minimo configurato.",
+        "Il recupero non si ferma al minimo: include un margine per evitare ping-pong tra conti.",
+        "Il trasferimento richiede approvazione cliente e viene eseguito solo dopo conferma."
+      ]
+    },
+    "tool_result": {
+      "status": "EXECUTED",
+      "recipient": "Checking",
+      "amount": 1600.0,
+      "currency": "EUR",
+      "execution_mode": "SQLITE_COMMITTED",
+      "operation_id": "prop_transfer_reverse_txn_20260708_salary_001_emergency_to_checking_160000",
+      "transfer_id": "trc_19f48e63f1f",
+      "debit_transaction_id": "txn_2026-07-10_agent_savings_out_19f48e63f1f",
+      "credit_transaction_id": "txn_2026-07-10_agent_savings_in_19f48e63f1f"
+    },
+    "metrics": {
+      "trace_id": "trc_19f48e63f1f",
+      "latency_ms": 8,
+      "tokens_estimated": 0,
+      "tool_calls": 1,
+      "tool_failures": 0,
+      "timed_out": false
+    }
+  }
+]

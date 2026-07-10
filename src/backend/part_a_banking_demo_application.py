@@ -7,37 +7,41 @@ from typing import Any
 
 try:
     from .agentic_system.tools import BankingToolExecutor
-    from .application.audit_trace_metrics import iso_now
-    from .application.customer_chat_service import CustomerChatService
-    from .application.customer_transfer_approval_workflow import (
+    from .application.services import (
+        CustomerChatService,
         CustomerTransferApprovalWorkflow,
+        DashboardStateResponseBuilder,
+        JsonAuditTrail,
+        iso_now,
+        load_local_env_file,
+        new_trace_id,
     )
-    from .application.dashboard_state_response_builder import DashboardStateResponseBuilder
-    from .application.local_env_file_loader import load_local_env_file
-    from .application.trace_id_factory import new_trace_id
-    from .intelligence.customer_emergency_goal import default_user_goal
-    from .intelligence.dashboard_read_model_builder import CustomerDashboardReadModelBuilder
     from .intelligence.emergency_fund_recommendation_planner import (
         EmergencyFundRecommendationPlanner,
     )
-    from .observability.json_audit_trail import JsonAuditTrail
+    from .intelligence.read_models import (
+        CustomerDashboardReadModelBuilder,
+        default_user_goal,
+    )
     from .storage.sqlite_banking_store import SQLiteBankingStore
 except ImportError:  # Allows direct script-style imports during prototyping.
     from agentic_system.tools import BankingToolExecutor
-    from application.audit_trace_metrics import iso_now
-    from application.customer_chat_service import CustomerChatService
-    from application.customer_transfer_approval_workflow import (
+    from application.services import (
+        CustomerChatService,
         CustomerTransferApprovalWorkflow,
+        DashboardStateResponseBuilder,
+        JsonAuditTrail,
+        iso_now,
+        load_local_env_file,
+        new_trace_id,
     )
-    from application.dashboard_state_response_builder import DashboardStateResponseBuilder
-    from application.local_env_file_loader import load_local_env_file
-    from application.trace_id_factory import new_trace_id
-    from intelligence.customer_emergency_goal import default_user_goal
-    from intelligence.dashboard_read_model_builder import CustomerDashboardReadModelBuilder
     from intelligence.emergency_fund_recommendation_planner import (
         EmergencyFundRecommendationPlanner,
     )
-    from observability.json_audit_trail import JsonAuditTrail
+    from intelligence.read_models import (
+        CustomerDashboardReadModelBuilder,
+        default_user_goal,
+    )
     from storage.sqlite_banking_store import SQLiteBankingStore
 
 
@@ -68,7 +72,9 @@ class PartABankingDemoApplication:
             goal_provider=lambda: self.user_goal,
         )
         self.proposals = self.emergency_fund_planner
-        self.dashboard_read_models = CustomerDashboardReadModelBuilder(self.banking_store)
+        self.dashboard_read_models = CustomerDashboardReadModelBuilder(
+            self.banking_store
+        )
         self.read_models = self.dashboard_read_models
 
         self.dashboard_state_builder = DashboardStateResponseBuilder(
@@ -129,10 +135,16 @@ class PartABankingDemoApplication:
             transfer_rounding_increment_eur=transfer_rounding_increment_eur,
         )
 
-    def submit_transfer(self, amount: float) -> dict[str, Any]:
-        return self.transfer_workflow.submit_transfer(amount)
+    def submit_transfer(
+        self,
+        amount: float,
+        action_type: str | None = None,
+    ) -> dict[str, Any]:
+        return self.transfer_workflow.submit_transfer(amount, action_type=action_type)
 
-    def cashflow_forecast(self, proposal: dict[str, Any] | None = None) -> dict[str, Any]:
+    def cashflow_forecast(
+        self, proposal: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         return self.dashboard_read_models.cashflow_forecast(proposal)
 
     def agent_inbox(self, proposal: dict[str, Any]) -> list[dict[str, Any]]:
@@ -152,7 +164,11 @@ class PartABankingDemoApplication:
         )
         self._last_event = None
         self.chat_service.reset_agent()
-        return {"status": result["status"], "mutation": result, "state": self.dashboard_state()}
+        return {
+            "status": result["status"],
+            "mutation": result,
+            "state": self.dashboard_state(),
+        }
 
     def chat(self, message: str) -> dict[str, Any]:
         return self.chat_service.chat(message)

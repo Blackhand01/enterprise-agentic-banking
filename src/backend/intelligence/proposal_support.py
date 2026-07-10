@@ -1,11 +1,14 @@
-"""Customer-facing action templates for emergency-fund planning."""
+"""Emergency-fund action templates and safety route helpers."""
 
 from __future__ import annotations
 
 from typing import Any
 
 
-def transfer_to_emergency_fund_plan(amount: float, goal: dict[str, Any]) -> dict[str, Any]:
+# emergency_fund_action_templates.py
+def transfer_to_emergency_fund_plan(
+    amount: float, goal: dict[str, Any]
+) -> dict[str, Any]:
     return {
         "action_type": "TRANSFER",
         "route": "APPROVAL_REQUIRED",
@@ -17,12 +20,39 @@ def transfer_to_emergency_fund_plan(amount: float, goal: dict[str, Any]) -> dict
         "summary": f"L'obiettivo attivo e: {goal['description']}",
         "recommended_action": (
             f"Spostare {amount:.2f} EUR dal conto corrente al fondo emergenze, "
-            "mantenendo il margine di sicurezza configurato."
+            "mantenendo buffer e margine anti-oscillazione sul conto corrente."
         ),
         "rationale": [
-            "Il planner ha ricalcolato l'importo dal saldo corrente e dalle spese pianificate.",
-            "L'importo non e fisso: viene limitato dal margine minimo scelto dal cliente.",
+            "Il planner sposta l'eccesso sopra spese note, buffer e margine anti-oscillazione.",
+            "L'importo non e frazionato in micro-proposte successive.",
             "La destinazione e il fondo emergenze, coerente con l'obiettivo dichiarato.",
+        ],
+    }
+
+
+def transfer_from_emergency_fund_plan(
+    amount: float, goal: dict[str, Any]
+) -> dict[str, Any]:
+    return {
+        "action_type": "TRANSFER_REVERSE",
+        "route": "APPROVAL_REQUIRED",
+        "required_next_step": "CUSTOMER_APPROVAL",
+        "reason": "Le spese note superano la liquidita disponibile e il buffer minimo.",
+        "reason_codes": [
+            "checking_deficit_detected",
+            "emergency_fund_rescue_available",
+        ],
+        "amount": amount,
+        "title": "🔴 Allerta Liquidita: Necessario Recupero",
+        "summary": f"L'obiettivo attivo resta: {goal['description']}",
+        "recommended_action": (
+            f"Le spese note superano la liquidita attuale. Propongo di ritirare "
+            f"{amount:.2f} EUR dal Fondo Emergenze per riportare il conto in una banda stabile."
+        ),
+        "rationale": [
+            "Il conto corrente non copre spese pianificate e buffer minimo configurato.",
+            "Il recupero non si ferma al minimo: include un margine per evitare ping-pong tra conti.",
+            "Il trasferimento richiede approvazione cliente e viene eseguito solo dopo conferma.",
         ],
     }
 
@@ -86,4 +116,41 @@ def maintain_pace_plan(goal: dict[str, Any]) -> dict[str, Any]:
             "Proporre altri trasferimenti sarebbe ridondante e aumenterebbe il carico decisionale.",
             "L'agente continuera a monitorare il piano e rivalutera solo se il contesto cambia.",
         ],
+    }
+
+
+# proposal_safety_routes.py
+def known_expenses_would_not_be_covered(
+    *,
+    already_executed: bool,
+    action_type: str,
+    route: dict[str, Any],
+    projected_expense_buffer: float,
+) -> bool:
+    return (
+        not already_executed
+        and action_type == "TRANSFER"
+        and route["route"] == "APPROVAL_REQUIRED"
+        and projected_expense_buffer < 0
+    )
+
+
+def already_executed_route() -> dict[str, Any]:
+    return {
+        "route": "ALREADY_EXECUTED",
+        "reason": "Questa proposta e gia stata eseguita sul sistema di record.",
+        "required_next_step": "NO_ACTION",
+        "reason_codes": ["idempotency_key_consumed"],
+    }
+
+
+def known_expenses_blocked_route() -> dict[str, Any]:
+    return {
+        "route": "BLOCKED",
+        "reason": (
+            "Le spese pianificate dei prossimi 30 giorni non restano coperte "
+            "dopo lo spostamento proposto."
+        ),
+        "required_next_step": "REVIEW_CASHFLOW",
+        "reason_codes": ["known_expenses_not_covered_after_action"],
     }

@@ -1,21 +1,19 @@
-"""SQLite command that records an external expense against the customer ledger."""
+"""SQLite command for external customer ledger income."""
 
 from __future__ import annotations
-
 import sqlite3
 from datetime import datetime
 from typing import Any
-
-from .ledger_write_helpers import (
+from .commands import (
     account_for_update,
     duplicate_result,
     operation_status,
     record_executed_operation,
 )
-from .sqlite_connection import SQLiteConnectionProvider, now_iso
+from .schema_seed import SQLiteConnectionProvider, now_iso
 
 
-def record_external_expense(
+def record_external_income(
     *,
     connection_provider: SQLiteConnectionProvider,
     trace_id: str,
@@ -46,14 +44,7 @@ def record_external_expense(
             return duplicate_result(existing_operation, "EVENT_ALREADY_PROCESSED")
 
         account = account_for_update(connection, account_name)
-        if float(account["available_balance"]) < numeric_amount:
-            return {
-                "status": "BLOCKED",
-                "reason": "INSUFFICIENT_FUNDS",
-                "action_required": "REVIEW_CASHFLOW",
-            }
-
-        _subtract_external_expense(
+        _add_external_income(
             connection=connection,
             account_id=account["account_id"],
             transaction_id=transaction_id,
@@ -78,13 +69,13 @@ def record_external_expense(
         "trace_id": trace_id,
         "operation_id": stable_operation_id,
         "merchant": merchant,
-        "amount": -numeric_amount,
+        "amount": numeric_amount,
         "currency": "EUR",
         "execution_mode": "SQLITE_COMMITTED",
     }
 
 
-def _subtract_external_expense(
+def _add_external_income(
     *,
     connection: sqlite3.Connection,
     account_id: str,
@@ -99,7 +90,7 @@ def _subtract_external_expense(
     connection.execute(
         """
         UPDATE accounts
-        SET balance = balance - ?, available_balance = available_balance - ?
+        SET balance = balance + ?, available_balance = available_balance + ?
         WHERE account_id = ?
         """,
         (amount, amount, account_id),
@@ -118,18 +109,18 @@ def _subtract_external_expense(
             account_id,
             today,
             merchant,
-            -amount,
+            amount,
             category,
             display_name,
-            "out",
+            "in",
             created_at,
         ),
     )
     connection.execute(
         """
         UPDATE monthly_snapshots
-        SET checking_end_balance_eur = checking_end_balance_eur - ?,
-            discretionary_eur = discretionary_eur + ?
+        SET checking_end_balance_eur = checking_end_balance_eur + ?,
+            income_eur = income_eur + ?
         WHERE month = (
             SELECT month FROM monthly_snapshots ORDER BY month DESC LIMIT 1
         )

@@ -5,15 +5,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from .banking_schema import ensure_banking_schema
 from .customer_banking_read_store import CustomerBankingReadStore
 from .customer_banking_write_store import CustomerBankingWriteStore
-from .seed_ledger_loader import (
+from .schema_seed import (
+    SQLiteConnectionProvider,
+    ensure_banking_schema,
     is_banking_store_empty,
     is_financial_rule_config_missing,
     reset_banking_store_from_seed,
 )
-from .sqlite_connection import SQLiteConnectionProvider
 
 
 class SQLiteBankingStore:
@@ -23,9 +23,9 @@ class SQLiteBankingStore:
         self.seed_path = Path(seed_path)
         self.connection_provider = SQLiteConnectionProvider(db_path)
         ensure_banking_schema(self.connection_provider)
-        if is_banking_store_empty(self.connection_provider) or is_financial_rule_config_missing(
+        if is_banking_store_empty(
             self.connection_provider
-        ):
+        ) or is_financial_rule_config_missing(self.connection_provider):
             self.reset_from_seed()
 
         self.read = CustomerBankingReadStore(self.connection_provider)
@@ -51,6 +51,11 @@ class SQLiteBankingStore:
 
     def transactions_by_category(self, category: str) -> list[dict[str, Any]]:
         return self.read.transactions_by_category(category)
+
+    def transactions_for_semantic_search(
+        self, limit: int = 200
+    ) -> list[dict[str, Any]]:
+        return self.read.transactions_for_semantic_search(limit)
 
     def scheduled_transactions(self) -> list[dict[str, Any]]:
         return self.read.scheduled_transactions()
