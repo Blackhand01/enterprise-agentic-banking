@@ -1,253 +1,96 @@
-# Parte B - Architettura e System Design
+# Part B - Architecture and System Design
 
 ## Agentic Banking Experience
 
-Il prototipo dimostra una banking app in cui un agente AI diventa l'interfaccia primaria per il cliente, senza diventare autorità diretta sui sistemi core della banca.
+The prototype explores a banking app where the AI agent becomes the customer's primary interface, but not the direct authority over money. The demonstrated flow is narrow on purpose: after salary arrives, the agent detects idle liquidity, checks known expenses and the `Emergency_Fund` goal, proposes a transfer, asks for approval, executes only after authorization, and records the trace.
 
-Flow dimostrato: dopo l'arrivo dello stipendio, l'agente rileva liquidità inattiva, controlla uscite previste e obiettivo `Emergency_Fund`, propone un trasferimento, chiede approvazione, simula l'esecuzione e registra l'audit trail.
+The production design is built around one principle: **separate reasoning from control**. The model can interpret intent, retrieve context, and explain a proposed action. Deterministic services decide whether that action is allowed, requires approval, needs MFA, requires co-approval, or must be blocked.
 
-La scelta architetturale centrale è separare il "pensare" dal "fare": il modello può ragionare e proporre; autorizzazione, policy ed esecuzione restano deterministiche, testabili e auditabili.
-
-## 1. Obiettivi di design
-
-| Obiettivo | Significato |
-|---|---|
-| Accuratezza | I fatti finanziari arrivano dai systems of record, non dalla memoria del modello. |
-| Controllo | L'agente usa solo tool registrati, tipizzati e autorizzati. |
-| Sicurezza | Un layer deterministico decide allow, approval, step-up o block. |
-| Auditability | Proposte, decisioni, approvazioni, tool call ed esiti sono ricostruibili. |
-| Evolvibilità | Nuove capability si aggiungono via registry e policy, non riscrivendo l'agente. |
-
-## 2. Architettura di riferimento
+## Reference Architecture
 
 ```mermaid
 flowchart LR
   UI[Customer App]
-  AGENT[AI Agent]
-  CONTEXT[Bank Context]
-  SAFETY[Safety and Approval]
-  ACTION[Banking Action Gateway]
-  BANK[Bank Systems]
-  AUDIT[(Audit Log)]
+  ORCH[Agent Orchestrator]
+  MODEL[LLM]
+  CONTEXT[Bank Context Layer]
+  POLICY[Policy and Risk Engine]
+  TOOLS[Tool Registry]
+  GATEWAY[Banking Action Gateway]
+  BANK[Systems of Record]
+  AUDIT[(Audit and Evaluation Log)]
 
-  UI -->|request / approval| AGENT
-  AGENT -->|needs facts| CONTEXT
-  CONTEXT -->|verified context| AGENT
-  AGENT -->|proposal| SAFETY
-  SAFETY -->|ask / block| UI
-  SAFETY -->|approved action| ACTION
-  ACTION -->|execute| BANK
-  BANK -->|result| ACTION
-  ACTION -->|confirmation| UI
-  AGENT --> AUDIT
-  SAFETY --> AUDIT
-  ACTION --> AUDIT
+  UI -->|request / approval| ORCH
+  ORCH -->|bounded prompt| MODEL
+  ORCH -->|read facts| CONTEXT
+  CONTEXT --> BANK
+  ORCH -->|structured proposal| POLICY
+  TOOLS --> ORCH
+  POLICY -->|allow / approve / step-up / block| UI
+  POLICY -->|authorized action| GATEWAY
+  GATEWAY -->|idempotent write| BANK
+  ORCH --> AUDIT
+  POLICY --> AUDIT
+  GATEWAY --> AUDIT
 ```
 
-| Blocco | Responsabilità |
-|---|---|
-| `Customer App` | Esperienza cliente, approvazioni, spiegazioni, fonti e audit leggibile. |
-| `AI Agent` | Interpreta l'intento, usa contesto verificato e produce una proposta strutturata. |
-| `Bank Context` | Espone dati cliente, read model e policy versionate. |
-| `Safety and Approval` | Valuta rischio, soglie, step-up, co-approvazione e blocchi. |
-| `Banking Action Gateway` | Esegue solo azioni validate e autorizzate, con idempotenza. |
-| `Bank Systems` | Systems of record: core banking, ledger, payments, cards, customer data. |
-| `Audit Log` | Trace immutabile per customer explanation, operations ed evaluation. |
+The customer app shows the recommendation, the financial impact, the reason approval is needed, and the final outcome. The agent orchestrator owns conversation flow and tool selection, but it does not write to bank systems. The context layer exposes verified balances, transactions, goals, beneficiaries, and active policies. The policy engine owns risk routing. The banking gateway is the only component allowed to execute writes, and only with a validated action, approval token, and idempotency key.
 
-Il confine critico è tra `Safety and Approval` e `Banking Action Gateway`: nessuna azione con effetti reali raggiunge i sistemi bancari senza verifica e autorizzazione.
+This keeps the line clear for both business and engineering: the AI improves experience and decision support; bank controls remain explicit, testable, and auditable.
 
-## 3. Runtime flow
+## Interaction and Autonomy
+
+Autonomy changes with risk. For read-only questions, the agent can answer after grounding in verified data. For low-risk reversible tasks, such as categorization, execution may be allowed if the customer has enabled it. For money movement to an existing internal destination, the default route is customer approval. For high-value transfers, new beneficiaries, shared accounts, credit products, or irreversible changes, the route becomes MFA, co-approval, human review, or block.
+
+Risk is not only amount. The engine also considers destination, reversibility, ownership, customer preferences, data freshness, account type, and policy version. A small transfer into an existing savings pot is not treated like a mortgage application or a new external payee.
+
+## Grounding and Data Boundaries
+
+Current financial facts must come from systems of record or structured read models, not from model memory or chat history. RAG is useful for policies, procedures, and product explanations, but it should not be the source of balances, amounts, or execution state.
+
+The orchestrator gives the model a small, typed context package: available balance, upcoming expenses, savings goal, allowed tools, active policy snippets, and instruction constraints such as "propose at most one action" and "do not invent missing facts." The audit trace stores the context references, policy versions, proposal, approval decision, tool call, and result. If a fact is missing or stale, the agent must say so or defer; it should not fill gaps with plausible financial advice.
+
+## Taking Action Safely
+
+Every capability is added through a tool contract, not a prompt permission. A tool declares its input schema, risk class, dry-run support, reversibility, required approvals, idempotency behavior, and audit fields. The agent can discover available tools, but the policy engine decides whether a proposed use is allowed.
 
 ```mermaid
 sequenceDiagram
   autonumber
-  participant UI as Customer App
-  participant A as AI Agent
-  participant C as Bank Context
-  participant S as Safety and Approval
-  participant G as Banking Action Gateway
+  participant A as Agent Orchestrator
+  participant C as Context Layer
+  participant P as Policy Engine
+  participant U as Customer App
+  participant G as Action Gateway
   participant B as Bank Systems
   participant L as Audit Log
 
-  A->>C: Recupera saldo, uscite previste, obiettivi e policy
-  C-->>A: Contesto verificato
-  A->>S: Propone trasferimento verso saving pot
-  S-->>UI: Richiede approvazione cliente
-  UI-->>S: Approvato
-  S->>G: Azione autorizzata
-  G->>B: Esegue con idempotency key
-  B-->>G: Esito operazione
-  G-->>UI: Conferma esecuzione
-  A->>L: Proposta e contesto
-  S->>L: Decisione e approvazione
-  G->>L: Tool call ed esito
+  A->>C: Retrieve balances, expenses, goal, active policies
+  C-->>A: Verified context
+  A->>P: Structured transfer proposal
+  P-->>U: Approval or step-up required
+  U-->>P: Approval token
+  P->>G: Authorized action
+  G->>B: Execute with idempotency key
+  B-->>G: Result
+  G-->>U: Confirmation
+  A->>L: Context and proposal
+  P->>L: Risk route and approval evidence
+  G->>L: Tool call and result
 ```
 
-Lo stesso pattern copre altre capability: blocco carta, annullamento abbonamento, pagamento fattura o modifica budget cambiano tool e policy, non architettura.
+Adding a new capability, for example card freeze or bill payment, requires an adapter, a typed tool schema, policy rules, UI states, audit fields, and evaluation cases. It should not require rewriting the agent loop.
 
-## 4. Autonomia e controllo umano
+## Reliability, Safety, and Operations
 
-| Livello | Tipo di azione | Esempio | Route |
-|---|---|---|---|
-| 0 | Informativa | "Quanto ho speso in sport?" | Risposta grounded. |
-| 1 | Basso rischio e reversibile | Ricategorizzare una transazione | Esegue se la policy cliente lo consente. |
-| 2 | Medio rischio | Spostare una piccola somma verso saving pot esistente | Chiede approvazione. |
-| 3 | Alto rischio, nuovo o irreversibile | Nuovo beneficiario, importo elevato, chiusura conto | Step-up, co-approval o human-only. |
+The system fails conservatively. If the model times out, no action is executed. If context is missing, the answer is limited. If retrieval is uncertain, the policy is not treated as fact. If the policy engine is unavailable, writes fail closed. If core banking times out, retries use the same idempotency key to prevent duplicate movement.
 
-Il rischio non è solo importo. Il policy engine considera reversibilità, pattern storici, destinazione, account ownership, preferenze cliente, classe del tool e freschezza dei dati.
+Operationally, I would track grounded-answer rate, verifier pass rate, false allow rate, blocked-action rate, approval and rejection rates, p95 latency, fallback rate, cost per flow, and post-action disputes. Before expanding autonomy, each model, prompt, and tool should pass offline evaluation, adversarial cases, replay on anonymized historical data, shadow mode, and staged rollout.
 
-## 5. Grounding
+## Enterprise and Regulatory Reality
 
-| Tipo di dato | Fonte | Uso |
-|---|---|---|
-| Saldi, transazioni, pending, obiettivi, beneficiari | API bancarie e read model strutturati | Fonte di verità per numeri e stato operativo. |
-| Policy, procedure, prodotti, vincoli interni | Repository documentali versionati | Retrieval semantico e spiegazioni operative. |
+Auditability is a product feature, not just compliance plumbing. Customers need a readable explanation of what data was used and what was approved. Operations and compliance need a reconstructable trace with prompt inputs, policy versions, approval evidence, tool calls, and outcomes.
 
-Il RAG è utile per policy e knowledge base. Non deve essere fonte per saldi, importi o stato di esecuzione.
+Privacy controls should minimize what reaches the model, redact unnecessary fields, isolate tenant and customer data, and keep secrets out of prompts. Authentication for agent-initiated actions should use normal bank-grade approval tokens. Shared accounts require explicit policy for who can view, approve, set autonomy preferences, and veto actions; conflicts should choose the most conservative route.
 
-L'orchestratore passa al modello un contesto minimo:
-
-```json
-{
-  "customer_context": {
-    "available_balance": 4250.0,
-    "currency": "EUR",
-    "upcoming_expenses_30d": 1520.0,
-    "emergency_fund": {"target": 10000.0, "current": 3000.0},
-    "autonomy_preferences": {
-      "savings_transfer_requires_approval_above": 100.0
-    }
-  },
-  "allowed_tools": ["transfer_to_savings_pot"],
-  "instruction": "Propose at most one action. Do not invent missing facts."
-}
-```
-
-L'audit conserva query dati, versioni documentali e input effettivo usato per la proposta.
-
-## 6. Tool registry ed esecuzione
-
-Ogni tool dichiara schema, risk class, reversibilità, dry-run, idempotenza e approval policy.
-
-```json
-{
-  "name": "transfer_to_savings_pot",
-  "input_schema": {
-    "source_account_id": "string",
-    "target_pot_id": "string",
-    "amount": "decimal",
-    "currency": "EUR",
-    "reason": "string"
-  },
-  "risk_class": "medium",
-  "reversible": true,
-  "supports_dry_run": true,
-  "idempotency_required": true,
-  "approval_policy": "decided_by_policy_engine"
-}
-```
-
-```mermaid
-flowchart LR
-  PROPOSAL[Agent Proposal]
-  CHECK[Validate and Authorize]
-  ACTION[Banking Action Gateway]
-  BANK[Bank Systems]
-  AUDIT[Audit Log]
-
-  PROPOSAL --> CHECK
-  CHECK -->|approved| ACTION
-  ACTION --> BANK
-  ACTION --> AUDIT
-```
-
-Per aggiungere una capability servono adapter, contratto tool, policy, stati UI, audit schema ed eval cases. L'agente scopre vincoli e tool dal registry.
-
-## 7. Policy and Risk Engine
-
-Il risk engine riceve input strutturati e restituisce una route spiegabile:
-
-```json
-{
-  "action": "transfer_to_savings_pot",
-  "amount": 300.0,
-  "risk_class": "medium",
-  "reversible": true,
-  "is_existing_target": true,
-  "customer_preference": "approval_required_above_100",
-  "route": "ask_approval",
-  "reason_codes": [
-    "amount_above_customer_autonomy_limit",
-    "money_movement",
-    "reversible_action"
-  ]
-}
-```
-
-La route controlla sia il backend sia la UI: allow, approval, step-up, co-approval, block o human review.
-
-## 8. Auditability ed explainability
-
-```mermaid
-flowchart TD
-  TRACE[Trace ID]
-  INTENT[Intent / Trigger]
-  CONTEXT[Grounded Context References]
-  PLAN[Structured Plan]
-  POLICY[Risk Decision]
-  APPROVAL[Approval Evidence]
-  TOOL[Tool Call]
-  RESULT[Execution Result]
-  EXPLAIN[Customer Explanation]
-
-  TRACE --> INTENT
-  TRACE --> CONTEXT
-  TRACE --> PLAN
-  TRACE --> POLICY
-  TRACE --> APPROVAL
-  TRACE --> TOOL
-  TRACE --> RESULT
-  TRACE --> EXPLAIN
-```
-
-Il cliente vede dati usati, impatto previsto, motivo dell'approvazione ed esito. Engineering e operations vedono il trace completo. La domanda "perché l'agente ha fatto questo?" deve essere rispondibile dal trace, non dal modello a posteriori.
-
-## 9. Reliability, safety e operations
-
-Il sistema fallisce in modo conservativo.
-
-| Failure mode | Comportamento |
-|---|---|
-| Timeout modello | Fallback; nessuna esecuzione. |
-| Dati finanziari mancanti | Non inventa numeri; chiede conferma o rimanda. |
-| Retrieval incerto | Non cita policy come fatto certo; escalation se necessario. |
-| Verifier mismatch | Blocca prima di approval o execution. |
-| Risk engine non disponibile | Fail closed. |
-| Approval scaduta | Richiede nuovo approval token. |
-| Timeout core banking | Retry solo con idempotency key; stato pending se serve. |
-| Richiesta duplicata | Idempotenza contro doppia esecuzione. |
-
-Metriche operative: grounded answer rate, tool accuracy, verifier pass rate, blocked action rate, false allow rate, approval/rejection rate, p95 latency, fallback rate e cost per flow.
-
-Prima di dare autorità a un nuovo prompt, modello o tool: offline eval, casi avversariali, replay storico anonimizzato, shadow mode e rollout graduale.
-
-## 10. Privacy, autenticazione e conti condivisi
-
-Privacy: minimizzare il contesto passato al modello, redigere campi non necessari, isolare tenant e cliente, tenere secret fuori dal prompt e centralizzare le chiamate modello.
-
-Autenticazione: se la route è `step_up_required`, il gateway richiede un approval token valido prima di qualsiasi write.
-
-Conti condivisi: il policy engine deve modellare chi può vedere, approvare, impostare preferenze di autonomia e quando serve co-approvazione. In caso di conflitto sceglie la route più conservativa.
-
-## 11. Roadmap di produzione
-
-| Stage | Scope | Scopo |
-|---|---|---|
-| Prototype | Seed mock, SQLite locale, audit panel | Dimostrare interaction model e control model. |
-| MVP 1 | Read-only e propose-only | Valore cliente senza autorità di esecuzione. |
-| MVP 2 | Azioni reversibili a basso rischio | Validare registry, policy, audit e rollback. |
-| MVP 3 | Money movement verso destinazioni fidate | Introdurre approval, step-up e gateway bancario. |
-| Production scale | Più tool, shared accounts, ops console, eval pipeline | Espandere senza cambiare il core design. |
-
-La prima capability reale non dovrebbe essere un "autonomous banker" generico. Partirei da insight di cash-flow e raccomandazioni di risparmio, con esecuzione disabilitata o sempre approval-gated.
-
+The result is not a chatbot attached to banking APIs. It is an agentic banking system where reasoning, authorization, execution, and audit have separate owners.

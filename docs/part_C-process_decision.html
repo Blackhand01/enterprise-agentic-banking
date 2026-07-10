@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>Parte C - Processo e decisioni</title>
+  <title>Part C - Process and Decisions</title>
   <style>
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -273,130 +273,53 @@
   </script>
 </head>
 <body>
-<h1 id="parte-c---processo-e-decisioni">Parte C - Processo e
-decisioni</h1>
-<h2 id="strategia">1. Strategia</h2>
-<p>Ho trattato l’esercizio come un prototipo architetturale per
-engineering lead bancari. Il punto non era simulare ogni prodotto
-finanziario, ma rendere verificabile il confine tra ragionamento
-dell’agente, autorizzazione e azione deterministica.</p>
-<p>Ho scelto un singolo flow: dopo l’arrivo dello stipendio, l’agente
-propone di spostare liquidità inattiva verso
-<code>Emergency_Fund</code>. Questo concentra la demo sui problemi
-importanti: grounding, soglie di rischio, approvazione cliente, blocco
-MFA e audit trail.</p>
-<p>Sequenza di lavoro:</p>
-<ol type="1">
-<li>definire il flow e i rischi da dimostrare;</li>
-<li>creare mock data coerenti per utente, ledger, policy e audit;</li>
-<li>isolare retrieval, schemi, guardrail e tool execution;</li>
-<li>costruire una UI che mostri esperienza cliente e pannello
-tecnico;</li>
-<li>documentare in Parte B il passaggio da prototipo a produzione;</li>
-<li>verificare il flow con smoke test ripetibili.</li>
-</ol>
-<h2 id="tool-e-framework">2. Tool e framework</h2>
-<table>
-<colgroup>
-<col style="width: 50%" />
-<col style="width: 50%" />
-</colgroup>
-<thead>
-<tr>
-<th>Scelta</th>
-<th>Motivo</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Python + FastAPI</td>
-<td>Backend piccolo, leggibile e facile da avviare.</td>
-</tr>
-<tr>
-<td>HTML/CSS/JavaScript statici</td>
-<td>Nessun build step frontend.</td>
-</tr>
-<tr>
-<td>SQLite locale</td>
-<td>System of record del prototipo, con commit SQL reali.</td>
-</tr>
-<tr>
-<td>JSON locali</td>
-<td>Seed iniziale e policy catalog senza infrastruttura extra.</td>
-</tr>
-<tr>
-<td>Pydantic</td>
-<td>Contratti espliciti per request API e tool input.</td>
-</tr>
-<tr>
-<td>OpenAI-compatible tool calling</td>
-<td>LLM reale quando configurato; flow principale funzionante anche
-senza provider esterno.</td>
-</tr>
-<tr>
-<td>Mermaid</td>
-<td>Diagrammi leggibili in Markdown e HTML.</td>
-</tr>
-<tr>
-<td>Makefile</td>
-<td>Run, reset, smoke test e cleanup ripetibili.</td>
-</tr>
-</tbody>
-</table>
-<h2 id="uso-dellai-assistance">3. Uso dell’AI assistance</h2>
-<p>Ho usato AI assistance per accelerare task stretti: mock data,
-scaffolding Python, copy UI, refactor e casi di test minimi.</p>
-<p>Non ho delegato all’AI le decisioni di sicurezza. Soglie,
-validazioni, policy filtering, route di rischio e risultato dei tool
-sono implementati in codice deterministico.</p>
-<h2 id="decisioni-principali">4. Decisioni principali</h2>
-<h3 id="singolo-agente-nel-prototipo">Singolo agente nel prototipo</h3>
-<p>Una soluzione production può usare componenti specializzati, ma nel
-prototipo ho evitato complessità multi-agent. In cinque giorni era più
-importante dimostrare bene il confine AI-to-ledger.</p>
-<h3 id="guardrail-deterministici">Guardrail deterministici</h3>
-<p>I controlli principali non vivono nel prompt: policy stale filtering,
-importi validi, limite EUR 500, MFA e stato <code>EXECUTED</code> sono
-verificati dal codice. Il modello può spiegare un blocco, non
-reinterpretarlo come successo.</p>
-<h3 id="grounding-separato">Grounding separato</h3>
-<p>I numeri correnti arrivano da SQLite, che rappresenta il system of
-record locale. <code>ledger.json</code> è solo il seed. Le policy
-arrivano da <code>policyDB.json</code> dopo filtro sulle versioni
-attive. In produzione la stessa distinzione separa API bancarie e RAG
-documentale.</p>
-<h3 id="ui-con-pannello-tecnico">UI con pannello tecnico</h3>
-<p>La UI mostra prima il valore cliente: proposta, impatto, approvazione
-e chat. Il pannello tecnico espone contesto, policy, audit e payload
-grezzo per rendere ispezionabile il comportamento agentico.</p>
-<h2 id="scope-lasciato-fuori">5. Scope lasciato fuori</h2>
-<p>Ho escluso deliberatamente login reale, scritture su core banking,
-vector database, orchestrazione multi-agent, approval token MFA reale,
-conti cointestati completi, audit WORM, eval pipeline production e
-deployment cloud.</p>
-<p>Non sono assunzioni di prodotto: sono scelte di scope. La Parte B
-spiega come introdurle senza cambiare il principio architetturale
-centrale.</p>
-<h2 id="primo-passo-production">6. Primo passo production</h2>
-<p>Partirei da un MVP read-only/propose-only:</p>
-<ol type="1">
-<li>insight cash-flow e categorizzazione spese;</li>
-<li>raccomandazioni di risparmio senza esecuzione automatica;</li>
-<li>azioni approval-gated verso destinazioni interne fidate;</li>
-<li>integrazione MFA e approval token;</li>
-<li>rollout limitato con shadow mode, eval e audit completo.</li>
-</ol>
-<p>Solo dopo introdurrei azioni a basso rischio e reversibili, sempre
-dietro tool registry, policy engine e audit trail.</p>
-<h2 id="criterio-di-successo">7. Criterio di successo</h2>
-<p>Il prototipo è riuscito se il reviewer vede tre cose:</p>
-<ul>
-<li>l’agente non inventa dati fuori contesto;</li>
-<li>l’agente non può muovere denaro oltre i limiti deterministici;</li>
-<li>il passaggio da demo a prodotto è chiaro, auditabile e
-incrementale.</li>
-</ul>
-<p>La scelta centrale è mantenere l’AI come interfaccia di ragionamento
-e spiegazione, non come autorità bancaria diretta.</p>
+<h1 id="part-c---process-and-decisions">Part C - Process and
+Decisions</h1>
+<h2 id="strategy">Strategy</h2>
+<p>I treated the exercise as an architectural prototype for banking
+engineering leads and business stakeholders. I did not try to simulate
+every banking product. I chose one narrow flow: after salary arrives,
+the agent proposes moving idle liquidity to
+<code>Emergency_Fund</code>.</p>
+<p>That flow was enough to show the important boundary: the model can
+reason, retrieve context, and explain a recommendation, but
+deterministic systems must authorize and execute any action on
+money.</p>
+<h2 id="tools-and-ai-assistance">Tools and AI Assistance</h2>
+<p>I used Python + FastAPI for a small backend with clear service
+boundaries, static HTML/CSS/JavaScript to avoid a frontend build step,
+SQLite with JSON seed data for repeatable banking state, Pydantic for
+typed API and tool contracts, Mermaid and Pandoc for documentation, and
+OpenAI-compatible tool calling so the assistant can use a real model
+when configured.</p>
+<p>AI assistance helped with bounded tasks: mock data, scaffolding, UI
+copy, refactoring, and smoke-test coverage. I did not delegate safety
+decisions to AI. Amount validation, active-policy filtering, route
+decisions, idempotency, and execution results are implemented in
+code.</p>
+<h2 id="main-decisions">Main Decisions</h2>
+<p>I kept the prototype to one agent. A production system can split
+planning, retrieval, policy, execution, and oversight into specialized
+services, but in five days the important proof was the AI-to-ledger
+boundary.</p>
+<p>Guardrails are deterministic. The model can explain why an action is
+blocked or approval-gated, but it cannot reinterpret a blocked action as
+success. Current numbers come from SQLite read models; policy text comes
+from the active policy catalog. In production, that maps to bank APIs
+for facts and document retrieval for policy knowledge.</p>
+<p>The UI shows customer value first: proposal, impact, approval, and
+outcome. The technical inspection panel is included because agentic
+banking also needs operator trust.</p>
+<h2 id="production-next-step">Production Next Step</h2>
+<p>I left out real login, core-banking writes, real MFA tokens,
+shared-account approval, WORM audit storage, cloud deployment, and a
+full evaluation pipeline.</p>
+<p>For production, I would start with read-only cash-flow insights and
+savings recommendations, then add approval-gated internal transfers to
+trusted destinations. More autonomous reversible actions should come
+only after shadow mode, evals, monitoring, and clear audit.</p>
+<p>The success criterion is simple: the agent does not invent financial
+facts, cannot move money beyond deterministic controls, and has a
+credible path from prototype to regulated product.</p>
 </body>
 </html>

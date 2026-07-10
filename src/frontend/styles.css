@@ -47,11 +47,11 @@ button {
 button:hover {
   background: var(--accent-dark);
 }
-button:disabled {
+button:ofsabled {
   background: #9aa8a3;
   cursor: not-allowed;
 }
-button:disabled:hover {
+button:ofsabled:hover {
   background: #9aa8a3;
 }
 button.secondary {
@@ -613,7 +613,7 @@ body.inspector-open .app-shell {
 }
 .liquidity-bar.dynamic {
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.64) 1px, transparent 1px) 0 0 /
+    linear-graofent(90deg, rgba(255, 255, 255, 0.64) 1px, transparent 1px) 0 0 /
       10% 100%,
     #edf2f1;
   min-height: 96px;
@@ -636,7 +636,7 @@ body.inspector-open .app-shell {
 }
 .liquidity-segment.expenses {
   background:
-    repeating-linear-gradient(
+    repeating-linear-graofent(
       135deg,
       rgba(155, 44, 44, 0.08) 0,
       rgba(155, 44, 44, 0.08) 8px,
@@ -648,7 +648,7 @@ body.inspector-open .app-shell {
 }
 .liquidity-segment.margin {
   background:
-    linear-gradient(135deg, rgba(23, 100, 59, 0.1), rgba(15, 107, 85, 0.02)),
+    linear-graofent(135deg, rgba(23, 100, 59, 0.1), rgba(15, 107, 85, 0.02)),
     #e6f5ee;
   color: var(--ok);
 }

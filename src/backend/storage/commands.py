@@ -119,7 +119,7 @@ def inject_sandbox_state(
                     "sandbox_upcoming_expenses",
                     checking["account_id"],
                     scheduled_date,
-                    "Spese note sandbox",
+                    "Known expenses sandbox",
                     -upcoming_value,
                     "sandbox",
                 ),

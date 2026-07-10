@@ -18,25 +18,25 @@ class FetchTransactionsArgs(BaseModel):
     category: str | None = Field(
         default=None,
         description=(
-            "Macro-categoria bancaria, se il cliente la indica. Lascia vuoto "
-            "quando la ricerca è concettuale."
+            "Banking macro-category, if the customer provides it. Leave empty "
+            "when the search is conceptual."
         ),
     )
     search_query: str | None = Field(
         default=None,
         description=(
-            "Frase naturale o concetto semantico cercato dal cliente. Preferisci "
-            "la porzione completa della richiesta cliente rispetto a token isolati, "
-            "così il backend può risolvere ambiguità tramite embedding search locale."
+            "Natural phrase or semantic concept searched by the customer. Prefer "
+            "the full relevant part of the customer request over isolated tokens, "
+            "so the backend can resolve ambiguity through local embedding search."
         ),
     )
     date_from: str | None = Field(
         default=None,
-        description="Data iniziale opzionale in formato YYYY-MM-DD.",
+        description="Optional start date in YYYY-MM-DD format.",
     )
     date_to: str | None = Field(
         default=None,
-        description="Data finale opzionale in formato YYYY-MM-DD.",
+        description="Optional end date in YYYY-MM-DD format.",
     )
 
     @field_validator("category")
@@ -87,16 +87,16 @@ class ExecuteTransferArgs(BaseModel):
     recipient: str = Field(
         ...,
         min_length=1,
-        description="Beneficiario del trasferimento o nome del saving pot.",
+        description="Transfer beneficiary or savings pot name.",
     )
     amount: float = Field(
         ...,
         gt=0,
-        description="Importo in EUR.",
+        description="Amount in EUR.",
     )
     operation_id: str | None = Field(
         default=None,
-        description="Identificativo idempotente dell'operazione, se disponibile.",
+        description="Idempotent operation identifier, if available.",
     )
 
     @field_validator("recipient")
@@ -133,8 +133,8 @@ def llm_tool_definitions() -> list[dict[str, Any]]:
             "function": {
                 "name": "get_balance_summary",
                 "description": (
-                    "Recupera dai sistemi bancari locali i conti del cliente, "
-                    "i saldi e il saldo totale in EUR."
+                    "Retrieve the customer's local bank accounts, balances, "
+                    "and total balance in EUR."
                 ),
                 "parameters": NoArgs.model_json_schema(),
             },
@@ -144,9 +144,9 @@ def llm_tool_definitions() -> list[dict[str, Any]]:
             "function": {
                 "name": "get_customer_context",
                 "description": (
-                    "Recupera il contesto cliente verificato: conti, saldi, "
-                    "ultimo stipendio, pagamenti pianificati, transazioni recenti "
-                    "e storico mensile."
+                    "Retrieve verified customer context: accounts, balances, "
+                    "latest salary, scheduled payments, recent transactions, "
+                    "and monthly history."
                 ),
                 "parameters": NoArgs.model_json_schema(),
             },
@@ -156,8 +156,8 @@ def llm_tool_definitions() -> list[dict[str, Any]]:
             "function": {
                 "name": "get_spending_summary",
                 "description": (
-                    "Calcola in modo deterministico il totale delle uscite recenti "
-                    "del cliente usando solo transazioni con importo negativo."
+                    "Deterministically calculate total recent outflows "
+                    "using only negative-amount customer transactions."
                 ),
                 "parameters": NoArgs.model_json_schema(),
             },
@@ -167,10 +167,10 @@ def llm_tool_definitions() -> list[dict[str, Any]]:
             "function": {
                 "name": "fetch_transactions",
                 "description": (
-                    "Recupera lo storico delle transazioni bancarie del cliente. "
-                    "Consente di filtrare per macro-categoria o di effettuare "
-                    "ricerche semantiche su concetti specifici tramite embedding. "
-                    "Supporta filtri temporali strutturati con date_from e date_to."
+                    "Retrieve the customer's banking transaction history. "
+                    "Supports macro-category filters and semantic searches over "
+                    "specific concepts through embeddings. Supports structured "
+                    "date filters with date_from and date_to."
                 ),
                 "parameters": FetchTransactionsArgs.model_json_schema(),
             },
@@ -179,7 +179,7 @@ def llm_tool_definitions() -> list[dict[str, Any]]:
             "type": "function",
             "function": {
                 "name": "execute_transfer",
-                "description": "Invia una richiesta di trasferimento verso un beneficiario o saving pot.",
+                "description": "Submit a transfer request to a beneficiary or savings pot.",
                 "parameters": ExecuteTransferArgs.model_json_schema(),
             },
         },

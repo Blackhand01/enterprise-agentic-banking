@@ -173,19 +173,19 @@ class AgentRuntimeMixin:
             )
         details = "; ".join(account_parts)
         return (
-            "In questa banca hai "
-            f"{AgentRuntimeMixin._format_money(float(total), currency)} in totale. "
-            f"Dettaglio conti: {details}."
+            "You have "
+            f"{AgentRuntimeMixin._format_money(float(total), currency)} in total at this bank. "
+            f"Account detail: {details}."
         )
 
     @staticmethod
     def _format_transaction_summary(payload: dict[str, Any]) -> str | None:
-        category = payload.get("category") or "richiesta"
+        category = payload.get("category") or "request"
         if payload.get("status") == "NO_DATA":
             search_query = payload.get("search_query") or category
             return (
-                "Non ho accesso ai dati relativi a "
-                f"{search_query} nel tuo profilo attuale."
+                "I do not have access to data about "
+                f"{search_query} in your current profile."
             )
         if payload.get("status") != "OK":
             return None
@@ -194,8 +194,8 @@ class AgentRuntimeMixin:
             return None
         total = abs(round(sum(float(tx.get("amount", 0)) for tx in transactions), 2))
         return (
-            f"Ho trovato {len(transactions)} transazioni per la categoria {category}. "
-            f"Il totale considerato e {AgentRuntimeMixin._format_money(total, 'EUR')}."
+            f"I found {len(transactions)} transactions for category {category}. "
+            f"The considered total is {AgentRuntimeMixin._format_money(total, 'EUR')}."
         )
 
     @staticmethod
@@ -218,9 +218,9 @@ class AgentRuntimeMixin:
             )
         detail_text = "; ".join(details)
         return (
-            "Nelle transazioni recenti hai speso "
+            "In recent transactions you spent "
             f"{AgentRuntimeMixin._format_money(float(total_spent), currency)}. "
-            f"Principali uscite: {detail_text}."
+            f"Main outflows: {detail_text}."
         )
 
     @staticmethod

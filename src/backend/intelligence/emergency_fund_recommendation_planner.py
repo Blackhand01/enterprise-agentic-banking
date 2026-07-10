@@ -220,7 +220,7 @@ class EmergencyFundRecommendationPlanner:
         today = date.today().isoformat()
         return any(
             tx.get("date") == today
-            for tx in self.banking_store.transactions_by_category("imprevisti")
+            for tx in self.banking_store.transactions_by_category("unexpected")
         )
 
     def _is_goal_pace_on_track(

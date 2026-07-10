@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 
-# emergency_fund_action_templates.py
 def transfer_to_emergency_fund_plan(
     amount: float, goal: dict[str, Any]
 ) -> dict[str, Any]:
@@ -13,19 +12,19 @@ def transfer_to_emergency_fund_plan(
         "action_type": "TRANSFER",
         "route": "APPROVAL_REQUIRED",
         "required_next_step": "CUSTOMER_APPROVAL",
-        "reason": "Spostamento coerente con obiettivo cliente e margine cashflow.",
+        "reason": "Movement aligned with customer goal and cashflow margin.",
         "reason_codes": ["goal_aligned_savings", "known_expenses_covered"],
         "amount": amount,
-        "title": "Aumenta il fondo emergenze",
-        "summary": f"L'obiettivo attivo e: {goal['description']}",
+        "title": "Increase the emergency fund",
+        "summary": f"The active goal is: {goal['description']}",
         "recommended_action": (
-            f"Spostare {amount:.2f} EUR dal conto corrente al fondo emergenze, "
-            "mantenendo buffer e margine anti-oscillazione sul conto corrente."
+            f"Move {amount:.2f} EUR from checking to the emergency fund, "
+            "while preserving buffer and anti-oscillation margin in checking."
         ),
         "rationale": [
-            "Il planner sposta l'eccesso sopra spese note, buffer e margine anti-oscillazione.",
-            "L'importo non e frazionato in micro-proposte successive.",
-            "La destinazione e il fondo emergenze, coerente con l'obiettivo dichiarato.",
+            "The planner moves the excess above known expenses, buffer, and anti-oscillation margin.",
+            "The amount is not split into successive micro-proposals.",
+            "The destination is the emergency fund, aligned with the declared goal.",
         ],
     }
 
@@ -37,49 +36,49 @@ def transfer_from_emergency_fund_plan(
         "action_type": "TRANSFER_REVERSE",
         "route": "APPROVAL_REQUIRED",
         "required_next_step": "CUSTOMER_APPROVAL",
-        "reason": "Le spese note superano la liquidita disponibile e il buffer minimo.",
+        "reason": "Known expenses exceed available liquidity and the minimum buffer.",
         "reason_codes": [
             "checking_deficit_detected",
             "emergency_fund_rescue_available",
         ],
         "amount": amount,
-        "title": "🔴 Allerta Liquidita: Necessario Recupero",
-        "summary": f"L'obiettivo attivo resta: {goal['description']}",
+        "title": "Liquidity alert: recovery needed",
+        "summary": f"The active goal remains: {goal['description']}",
         "recommended_action": (
-            f"Le spese note superano la liquidita attuale. Propongo di ritirare "
-            f"{amount:.2f} EUR dal Fondo Emergenze per riportare il conto in una banda stabile."
+            "Known expenses exceed current liquidity. I propose withdrawing "
+            f"{amount:.2f} EUR from the Emergency Fund to bring the account back into a stable band."
         ),
         "rationale": [
-            "Il conto corrente non copre spese pianificate e buffer minimo configurato.",
-            "Il recupero non si ferma al minimo: include un margine per evitare ping-pong tra conti.",
-            "Il trasferimento richiede approvazione cliente e viene eseguito solo dopo conferma.",
+            "Checking does not cover scheduled expenses and the configured minimum buffer.",
+            "The recovery does not stop at the minimum: it includes margin to avoid account ping-pong.",
+            "The transfer requires customer approval and is executed only after confirmation.",
         ],
     }
 
 
 def cashflow_review_plan(goal: dict[str, Any], *, reason: str) -> dict[str, Any]:
     if reason == "goal_buffer":
-        title = "Mantieni liquidita sul conto"
+        title = "Preserve liquidity in checking"
         recommended_action = (
-            "Non spostare fondi ora: il margine minimo configurato dal cliente "
-            "assorbe la liquidita disponibile dopo le spese note."
+            "Do not move funds now: the customer-configured minimum margin "
+            "absorbs available liquidity after known expenses."
         )
         rationale = [
-            "L'obiettivo cliente richiede un margine minimo elevato sul conto corrente.",
-            "Dopo le spese pianificate non resta surplus sufficiente per un trasferimento utile.",
-            "La prossima azione e conservare liquidita e rivalutare al prossimo evento.",
+            "The customer goal requires a high minimum margin in checking.",
+            "After scheduled expenses, no useful transfer surplus remains.",
+            "The next action is to preserve liquidity and reassess at the next event.",
         ]
         reason_codes = ["goal_cash_buffer_priority", "no_available_surplus"]
     else:
-        title = "Rivedi il piano dopo l'imprevisto"
+        title = "Review the plan after the unexpected expense"
         recommended_action = (
-            "Mettere in pausa nuovi trasferimenti automatici e verificare il margine "
-            "dopo le spese note prima di decidere una nuova azione."
+            "Pause new automatic transfers and verify the margin after known expenses "
+            "before deciding a new action."
         )
         rationale = [
-            "E stata rilevata una spesa imprevista recente nel ledger.",
-            "Prima di proporre altro risparmio, l'agente deve proteggere liquidita e spese imminenti.",
-            "La prossima azione utile e una revisione, non un trasferimento precompilato.",
+            "A recent unexpected expense was detected in the ledger.",
+            "Before proposing more savings, the agent must protect liquidity and upcoming expenses.",
+            "The next useful action is a review, not a prefilled transfer.",
         ]
         reason_codes = ["unexpected_expense_detected", "goal_replanning_required"]
 
@@ -87,11 +86,11 @@ def cashflow_review_plan(goal: dict[str, Any], *, reason: str) -> dict[str, Any]
         "action_type": "REVIEW_CASHFLOW",
         "route": "REVIEW_REQUIRED",
         "required_next_step": "CUSTOMER_REVIEW",
-        "reason": "Il contesto e cambiato: serve rivalutare il cashflow prima di muovere liquidita.",
+        "reason": "The context changed: cashflow must be reassessed before moving liquidity.",
         "reason_codes": reason_codes,
         "amount": 0.0,
         "title": title,
-        "summary": f"L'obiettivo attivo resta: {goal['description']}",
+        "summary": f"The active goal remains: {goal['description']}",
         "recommended_action": recommended_action,
         "rationale": rationale,
     }
@@ -102,24 +101,23 @@ def maintain_pace_plan(goal: dict[str, Any]) -> dict[str, Any]:
         "action_type": "MAINTAIN_PACE",
         "route": "INFO",
         "required_next_step": "NO_ACTION",
-        "reason": "Il cliente e gia allineato al ritmo necessario per raggiungere l'obiettivo.",
+        "reason": "The customer is already aligned with the pace required to reach the goal.",
         "reason_codes": ["goal_pace_on_track", "no_extra_transfer_needed"],
         "amount": 0.0,
-        "title": "Mantieni il ritmo di risparmio",
-        "summary": f"L'obiettivo attivo resta: {goal['description']}",
+        "title": "Maintain savings pace",
+        "summary": f"The active goal remains: {goal['description']}",
         "recommended_action": (
-            "Sei perfettamente allineato al tuo piano di risparmio. "
-            "Non sono necessari trasferimenti extra questo mese."
+            "You are fully aligned with your savings plan. "
+            "No extra transfers are needed this month."
         ),
         "rationale": [
-            "La media storica dei versamenti copre il contributo mensile richiesto.",
-            "Proporre altri trasferimenti sarebbe ridondante e aumenterebbe il carico decisionale.",
-            "L'agente continuera a monitorare il piano e rivalutera solo se il contesto cambia.",
+            "The historical average contribution covers the required monthly contribution.",
+            "Proposing additional transfers would be redundant and increase decision load.",
+            "The agent will keep monitoring the plan and reassess only if context changes.",
         ],
     }
 
 
-# proposal_safety_routes.py
 def known_expenses_would_not_be_covered(
     *,
     already_executed: bool,
@@ -138,7 +136,7 @@ def known_expenses_would_not_be_covered(
 def already_executed_route() -> dict[str, Any]:
     return {
         "route": "ALREADY_EXECUTED",
-        "reason": "Questa proposta e gia stata eseguita sul sistema di record.",
+        "reason": "This proposal has already been executed on the system of record.",
         "required_next_step": "NO_ACTION",
         "reason_codes": ["idempotency_key_consumed"],
     }
@@ -148,8 +146,8 @@ def known_expenses_blocked_route() -> dict[str, Any]:
     return {
         "route": "BLOCKED",
         "reason": (
-            "Le spese pianificate dei prossimi 30 giorni non restano coperte "
-            "dopo lo spostamento proposto."
+            "Scheduled expenses for the next 30 days would no longer be covered "
+            "after the proposed movement."
         ),
         "required_next_step": "REVIEW_CASHFLOW",
         "reason_codes": ["known_expenses_not_covered_after_action"],

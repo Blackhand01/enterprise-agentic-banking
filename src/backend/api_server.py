@@ -1,4 +1,4 @@
-"""FastAPI entrypoint for the Part A prototype."""
+"""FastAPI API server for the banking demo."""
 
 from __future__ import annotations
 
@@ -10,18 +10,18 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-try:
-    from .part_a_banking_demo_application import PartABankingDemoApplication
-except ImportError:  # Allows running from src/backend during quick prototyping.
-    from part_a_banking_demo_application import PartABankingDemoApplication
+if __package__:
+    from .banking_demo_application import BankingDemoApplication
+else:  # Allows running from src/backend during quick prototyping.
+    from banking_demo_application import BankingDemoApplication
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT_DIR / "src" / "bank_data"
 FRONTEND_DIR = ROOT_DIR / "src" / "frontend"
 
-app = FastAPI(title="Prototipo TCS Agentic Bank")
-service = PartABankingDemoApplication(DATA_DIR)
+app = FastAPI(title="TCS Agentic Bank Prototype")
+service = BankingDemoApplication(DATA_DIR)
 
 app.add_middleware(
     CORSMiddleware,

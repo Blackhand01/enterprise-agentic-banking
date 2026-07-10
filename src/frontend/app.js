@@ -185,7 +185,7 @@ export class BankingDashboardApp {
     )
       renderSandboxResult({
         status: "ERROR",
-        reason: "Inserisci solo valori numerici maggiori o uguali a zero.",
+        reason: "Enter only numeric values greater than or equal to zero.",
       });
     else {
       ((this.sandboxInFlight = !0), updateSandboxButton(this.sandboxInFlight));
@@ -371,5 +371,5 @@ export async function bootstrap() {
   return (await app.start(), app);
 }
 bootstrap().catch((error) => {
-  document.body.innerHTML = `<pre>Impossibile caricare il prototipo: ${error.message}</pre>`;
+  document.body.innerHTML = `<pre>Unable to load the prototype: ${error.message}</pre>`;
 });

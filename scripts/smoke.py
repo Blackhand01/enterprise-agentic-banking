@@ -1,4 +1,4 @@
-"""Smoke checks for the Part A prototype."""
+"""Smoke checks for the banking demo prototype."""
 
 import json
 from pathlib import Path
@@ -20,7 +20,7 @@ from src.backend.agentic_system.semantic_transaction_retriever import (  # noqa:
     SemanticTransactionRetriever,
 )
 from src.backend.application.services import _assistant_unavailable_message  # noqa: E402
-from src.backend.main import app, service  # noqa: E402
+from src.backend.api_server import app, service  # noqa: E402
 
 
 class FakeAgent:
@@ -31,10 +31,10 @@ class FakeAgent:
         self.history.append(
             {
                 "role": "tool",
-                "content": '{"status":"OK","category":"sport","count":2,"transactions":[]}',
+                "content": '{"status":"OK","category":"sports","count":2,"transactions":[]}',
             }
         )
-        return "Risposta agentica di test tramite tool calling."
+        return "Agentic test response through tool calling."
 
 
 class FakeNoToolAgent:
@@ -42,11 +42,11 @@ class FakeNoToolAgent:
         self.history = []
 
     def chat(self, user_input: str) -> str:
-        self.history.append({"role": "assistant", "content": "Risposta senza tool."})
-        return "Risposta senza tool."
+        self.history.append({"role": "assistant", "content": "Response without tool."})
+        return "Response without tool."
 
 
-class FakeNoDataAgent:
+class FakeNoDateAgent:
     def __init__(self) -> None:
         self.history = []
 
@@ -58,17 +58,14 @@ class FakeNoDataAgent:
                 "content": json.dumps(
                     {
                         "status": "NO_DATA",
-                        "search_query": "quanto ho speso in mare?",
+                        "search_query": "how much did I spend at the seaside?",
                         "count": 0,
                         "transactions": [],
                     }
                 ),
             }
         )
-        return (
-            "Non ho trovato dati. Se hai bisogno di informazioni su altre categorie, "
-            "fammi sapere!"
-        )
+        return "I found no data for this request. Let me know if you need anything else."
 
 
 class FakeEmbeddingModel:
@@ -124,25 +121,25 @@ def main() -> None:
         assert payload["emergency_goal_projection"]["agent_timeline_label"]
         assert payload["emergency_goal_projection"]["is_behind_plan"] is True
         assert payload["emergency_goal_projection"]["monthly_savings_gap"] > 0
-        assert "servono" in payload["emergency_goal_projection"]["status_summary"]
+        assert "you need" in payload["emergency_goal_projection"]["status_summary"]
         assert len(payload["monthly_snapshots"]) == 12
         assert payload["cashflow_forecast"]["horizon_days"] == 30
         assert len(payload["agent_inbox"]) >= 1
         assert len(payload["proposal"]["evidence"]) >= 6
         evidence_groups = {item["group"] for item in payload["proposal"]["evidence"]}
-        assert "Contesto bancario fornito all'agente" in evidence_groups
-        assert "Decisione Safety and Approval" in evidence_groups
+        assert "Banking context provided to the agent" in evidence_groups
+        assert "Safety and Approval decision" in evidence_groups
         assert len(payload["policies"]["stale"]) == 1
-        assert _extract_month_range("e a giugno 2026 ?") == (
+        assert _extract_month_range("and in June 2026?") == (
             "2026-06-01",
             "2026-06-30",
         )
-        assert _extract_month_range("nel luglio 2026") == (
+        assert _extract_month_range("in July 2026") == (
             "2026-07-01",
             "2026-07-31",
         )
-        assert _is_temporal_follow_up("e a giugno 2026 ?") is True
-        assert _is_temporal_follow_up("Quanto ho speso a giugno 2026?") is False
+        assert _is_temporal_follow_up("and in June 2026?") is True
+        assert _is_temporal_follow_up("How much did I spend in June 2026?") is False
         initial_checking = next(
             account for account in payload["accounts"] if account["name"] == "Checking"
         )
@@ -232,16 +229,16 @@ def main() -> None:
             }
             RetrievalQueryTranslator.set_override(
                 lambda query: {
-                    "sci": "ski",
-                    "montagna": "mountain",
+                    "ski": "ski",
+                    "mountain": "mountain",
                     "trekking": "trekking",
-                    "mare": "sea",
+                    "seaside": "sea",
                 }.get(query.lower(), query)
             )
             ski_transactions = json.loads(
                 service.tool_executor.execute(
                     "fetch_transactions",
-                    {"category": "sport", "search_query": "sci"},
+                    {"category": "sports", "search_query": "ski"},
                 )
             )
             assert ski_transactions["status"] == "OK"
@@ -253,7 +250,7 @@ def main() -> None:
             trekking_transactions = json.loads(
                 service.tool_executor.execute(
                     "fetch_transactions",
-                    {"category": "sport", "search_query": "trekking"},
+                    {"category": "sports", "search_query": "trekking"},
                 )
             )
             assert trekking_transactions["status"] == "OK"
@@ -265,7 +262,7 @@ def main() -> None:
             mountain_transactions = json.loads(
                 service.tool_executor.execute(
                     "fetch_transactions",
-                    {"category": "sport", "search_query": "montagna"},
+                    {"category": "sports", "search_query": "mountain"},
                 )
             )
             assert mountain_transactions["status"] == "OK"
@@ -274,7 +271,7 @@ def main() -> None:
             imperfect_category_transactions = json.loads(
                 service.tool_executor.execute(
                     "fetch_transactions",
-                    {"category": "spese", "search_query": "montagna"},
+                    {"category": "spending", "search_query": "mountain"},
                 )
             )
             assert imperfect_category_transactions["status"] == "OK"
@@ -287,7 +284,7 @@ def main() -> None:
             query_only_transactions = json.loads(
                 service.tool_executor.execute(
                     "fetch_transactions",
-                    {"search_query": "montagna"},
+                    {"search_query": "mountain"},
                 )
             )
             assert query_only_transactions["status"] == "OK"
@@ -301,7 +298,7 @@ def main() -> None:
                 service.tool_executor.execute(
                     "fetch_transactions",
                     {
-                        "category": "affitto",
+                        "category": "rent",
                         "date_from": "2026-01-01",
                         "date_to": "2026-12-31",
                     },
@@ -318,7 +315,7 @@ def main() -> None:
                 service.tool_executor.execute(
                     "fetch_transactions",
                     {
-                        "category": "affitto",
+                        "category": "rent",
                         "date_from": "2026-06-01",
                         "date_to": "2026-06-30",
                     },
@@ -331,7 +328,7 @@ def main() -> None:
                 service.tool_executor.execute(
                     "fetch_transactions",
                     {
-                        "category": "affitto",
+                        "category": "rent",
                         "date_from": "2026-07-01",
                         "date_to": "2026-07-31",
                     },
@@ -343,7 +340,7 @@ def main() -> None:
             wrong_category_transactions = json.loads(
                 service.tool_executor.execute(
                     "fetch_transactions",
-                    {"category": "montagna"},
+                    {"category": "mountain"},
                 )
             )
             assert wrong_category_transactions["status"] == "NO_DATA"
@@ -352,7 +349,7 @@ def main() -> None:
             sea_transactions = json.loads(
                 service.tool_executor.execute(
                     "fetch_transactions",
-                    {"category": "sport", "search_query": "mare"},
+                    {"category": "sports", "search_query": "seaside"},
                 )
             )
             assert sea_transactions["status"] == "NO_DATA"
@@ -381,8 +378,8 @@ def main() -> None:
             ledger_seed_path=service.ledger_path,
         )
         system_prompt = guardrail_agent._system_prompt()  # noqa: SLF001
-        assert "Non offrire calcoli manuali di rischio" in system_prompt
-        assert "Non ho accesso ai dati relativi a [argomento]" in system_prompt
+        assert "Do not offer manual risk calculations" in system_prompt
+        assert "I do not have access to data about [topic]" in system_prompt
         guardrail_agent._append_message(  # noqa: SLF001
             {
                 "role": "tool",
@@ -417,7 +414,7 @@ def main() -> None:
         assert updated["transactions"][1]["transfer_id"] == executed["trace_id"]
         assert (
             updated["customer_activity"][0]["title"]
-            == "Trasferimento al fondo emergenze"
+            == "Transfer to emergency fund"
         )
         assert updated["customer_activity"][0]["amount"] == -300.0
         assert updated["proposal"]["action_type"] in {"TRANSFER", "REVIEW_CASHFLOW"}
@@ -555,7 +552,7 @@ def main() -> None:
         assert on_track_state["proposal"]["amount"] == 0.0
         assert (
             on_track_state["proposal"]["recommended_action"]
-            == "Sei perfettamente allineato al tuo piano di risparmio. Non sono necessari trasferimenti extra questo mese."
+            == "You are fully aligned with your savings plan. No extra transfers are needed this month."
         )
 
         service.reset_data()
@@ -564,10 +561,10 @@ def main() -> None:
                 trace_id=f"trc_test_expense_{index}",
                 operation_id=f"test_expense_{index}",
                 account_name="Checking",
-                merchant=f"Spesa test {index}",
+                merchant=f"Groceries test {index}",
                 amount=1200.0,
-                category="imprevisti",
-                display_name=f"Spesa imprevista test {index}",
+                category="unexpected",
+                display_name=f"Unexpected groceries test {index}",
             )
         degraded_state = client.get("/api/state").json()
         assert degraded_state["proposal"]["action_type"] == "TRANSFER_REVERSE"
@@ -577,26 +574,26 @@ def main() -> None:
         service.reset_data()
 
         service._banking_agent = FakeAgent()  # noqa: SLF001
-        chat = client.post("/api/chat", json={"message": "sport"}).json()
+        chat = client.post("/api/chat", json={"message": "sports"}).json()
         assert chat["tool_result"]["status"] == "OK"
 
         service._banking_agent = FakeNoToolAgent()  # noqa: SLF001
-        no_tool_chat = client.post("/api/chat", json={"message": "mare"}).json()
+        no_tool_chat = client.post("/api/chat", json={"message": "seaside"}).json()
         assert no_tool_chat["tool_result"]["status"] == "NO_TOOL_CALL"
 
-        service._banking_agent = FakeNoDataAgent()  # noqa: SLF001
-        no_data_chat = client.post("/api/chat", json={"message": "mare"}).json()
+        service._banking_agent = FakeNoDateAgent()  # noqa: SLF001
+        no_data_chat = client.post("/api/chat", json={"message": "seaside"}).json()
         assert no_data_chat["tool_result"]["status"] == "NO_DATA"
         assert (
             no_data_chat["answer"]
-            == "Non ho trovato transazioni nel tuo profilo attuale per questa richiesta."
+            == "I found no transactions in your current profile for this request."
         )
-        assert "fammi sapere" not in no_data_chat["answer"].lower()
+        assert "let me know" not in no_data_chat["answer"].lower()
 
-        assert "limite di utilizzo del provider LLM" in _assistant_unavailable_message(
+        assert "LLM provider usage limit" in _assistant_unavailable_message(
             "openai LLM API call failed: Error code: 429 - rate_limit_exceeded"
         )
-        assert "chiave LLM configurata non e valida" in _assistant_unavailable_message(
+        assert "configured LLM key is invalid" in _assistant_unavailable_message(
             "openai LLM API call failed: Error code: 401 - invalid_api_key"
         )
 

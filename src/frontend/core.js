@@ -66,42 +66,42 @@ export function routeClass(route) {
 export function routeLabel(route) {
   return (
     {
-      APPROVAL_REQUIRED: "Approvazione richiesta",
-      REVIEW_REQUIRED: "Revisione richiesta",
-      BLOCKED: "Bloccato",
-      STEP_UP_REQUIRED: "Verifica rafforzata richiesta",
-      INVALID_INPUT: "Input non valido",
-      ALREADY_EXECUTED: "Operazione completata",
-      INFO: "Informativo",
+      APPROVAL_REQUIRED: "Approval request",
+      REVIEW_REQUIRED: "Review required",
+      BLOCKED: "Blocked",
+      STEP_UP_REQUIRED: "Step-up verification required",
+      INVALID_INPUT: "Invalid input",
+      ALREADY_EXECUTED: "Operation completed",
+      INFO: "Informational",
     }[route] || route
   );
 }
 export function statusLabel(status) {
   return (
     {
-      EXECUTED: "Eseguito",
-      DUPLICATE: "Operazione gia eseguita",
-      BLOCKED: "Bloccato",
-      NO_DATA: "Dato non disponibile",
-      NO_TOOL_NEEDED: "Nessun tool necessario",
+      EXECUTED: "Executed",
+      DUPLICATE: "Operation already executed",
+      BLOCKED: "Blocked",
+      NO_DATA: "Data unavailable",
+      NO_TOOL_NEEDED: "No tool needed",
     }[status] || status
   );
 }
 export function actionLabel(action) {
   return (
     {
-      CUSTOMER_APPROVAL: "Approvazione cliente",
-      REQUEST_MFA: "Richiedi MFA",
-      CUSTOMER_REVIEW: "Revisione cliente",
-      FIX_AMOUNT: "Correggi importo",
-      REVIEW_CASHFLOW: "Rivedi cashflow",
-      NO_ACTION: "Nessuna azione",
-      none: "Nessuna",
+      CUSTOMER_APPROVAL: "Customer approval",
+      REQUEST_MFA: "Request MFA",
+      CUSTOMER_REVIEW: "Customer review",
+      FIX_AMOUNT: "Fix amount",
+      REVIEW_CASHFLOW: "Review cashflow",
+      NO_ACTION: "No action",
+      none: "None",
     }[action] || action
   );
 }
 export function riskLabel(risk) {
-  return { LOW: "BASSO", MEDIUM: "MEDIO", HIGH: "ALTO" }[risk] || risk;
+  return { LOW: "LOW", MEDIUM: "MEDIUM", HIGH: "HIGH" }[risk] || risk;
 }
 export function riskAssessment(route) {
   return "APPROVAL_REQUIRED" === route
@@ -151,13 +151,13 @@ export function isExecutableMoneyMovement(actionType) {
 }
 export function moneyMovementSummary(proposal, eur) {
   return "TRANSFER_REVERSE" === proposal.action_type
-    ? `Recupero liquidità: ${eur.format(proposal.amount)} dal fondo emergenze al conto corrente`
-    : `Proposta una tantum: ${eur.format(proposal.amount)}`;
+    ? `Liquidity recovery: ${eur.format(proposal.amount)} from emergency fund to checking`
+    : `One-time proposal: ${eur.format(proposal.amount)}`;
 }
 export function executedTransferCopy(proposal, eur) {
   return "TRANSFER_REVERSE" === proposal.action_type
-    ? `${eur.format(proposal.amount)} ritirati dal fondo emergenze al conto corrente`
-    : `${eur.format(proposal.amount)} spostati nel fondo emergenze`;
+    ? `${eur.format(proposal.amount)} withdrawn from emergency fund to checking`
+    : `${eur.format(proposal.amount)} moved to the emergency fund`;
 }
 export async function api(path, options = {}) {
   const response = await fetch(path, {

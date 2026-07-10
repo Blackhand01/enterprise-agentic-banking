@@ -202,32 +202,32 @@ def customer_safe_answer_for_tool_result(
 ) -> str:
     if tool_result.get("status") != "NO_DATA":
         return answer
-    return "Non ho trovato transazioni nel tuo profilo attuale per questa richiesta."
+    return "I found no transactions in your current profile for this request."
 
 
 def _assistant_unavailable_message(reason: str) -> str:
     lowered = reason.lower()
     if "invalid_api_key" in lowered or "invalid api key" in lowered or "401" in lowered:
         return (
-            "Assistente AI non disponibile: la chiave LLM configurata non e valida. "
-            "Verifica LLM_PROVIDER e la relativa chiave API in .env, poi riavvia il server."
+            "AI assistant unavailable: the configured LLM key is invalid. "
+            "Check LLM_PROVIDER and the related API key in .env, then restart the server."
         )
     if "rate_limit" in lowered or "rate limit" in lowered or "429" in lowered:
         return (
-            "Assistente AI temporaneamente non disponibile: limite di utilizzo del provider LLM raggiunto. "
-            "Riprova tra qualche minuto o usa una chiave con quota disponibile."
+            "AI assistant temporarily unavailable: the LLM provider usage limit was reached. "
+            "Try again in a few minutes or use a key with available quota."
         )
     if "API_KEY" in reason or "LLM_PROVIDER" in reason or "LLM_BASE_URL" in reason:
         return (
-            "Assistente AI non disponibile in questo ambiente. "
-            "Configura un provider LLM in .env per abilitare la chat agentica con tool calling."
+            "AI assistant unavailable in this environment. "
+            "Configure an LLM provider in .env to enable agentic chat with tool calling."
         )
     if "sentence-transformers" in reason:
         return (
-            "Assistente AI non disponibile: manca il motore di embedding locale. "
-            "Esegui python3 -m pip install -r requirements.txt e riavvia il server."
+            "AI assistant unavailable: the local embedding engine is missing. "
+            "Run python3 -m pip install -r requirements.txt and restart the server."
         )
     return (
-        "Assistente AI temporaneamente non disponibile. "
-        "Controlla il dettaglio tecnico nel pannello di ispezione."
+        "AI assistant temporarily unavailable. "
+        "Check the technical detail in the inspection panel."
     )

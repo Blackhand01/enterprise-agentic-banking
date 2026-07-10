@@ -242,24 +242,24 @@ def _approval_trace_events(
 ) -> list[dict[str, str]]:
     return [
         {
-            "layer": "App cliente",
-            "event": f"Il cliente ha approvato EUR {amount:.2f}",
+            "layer": "App customer",
+            "event": f"Il customer ha approvato EUR {amount:.2f}",
         },
-        {"layer": "Agente AI", "event": f"proposta: {proposal['title']}"},
+        {"layer": "Agent AI", "event": f"proposta: {proposal['title']}"},
         {"layer": "Contesto bancario", "event": "contesto letto da SQLite"},
         {
-            "layer": "Idempotenza",
+            "layer": "Idempotency",
             "event": f"operation_id: {proposal['proposal_id']}",
         },
         {
-            "layer": "Sicurezza e approvazione",
-            "event": f"percorso: {proposal['route']}",
+            "layer": "Safety and approval",
+            "event": f"route: {proposal['route']}",
         },
         {
-            "layer": "Gateway azioni bancarie",
-            "event": f"risultato tool: {tool_result['status']}",
+            "layer": "Banking action gateway",
+            "event": f"tool result: {tool_result['status']}",
         },
-        {"layer": "Audit log", "event": "evento persistito"},
+        {"layer": "Audit log", "event": "event persisted"},
     ]
 
 

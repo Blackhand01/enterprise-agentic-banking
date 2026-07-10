@@ -40,62 +40,62 @@ def evaluate_action_route(
     except (TypeError, ValueError):
         return _route(
             route="INVALID_INPUT",
-            reason="Importo non valido.",
+            reason="Invalid amount.",
             required_next_step="FIX_AMOUNT",
             reason_codes=["invalid_amount"],
         )
     if numeric_amount <= 0:
         return _route(
             route="INVALID_INPUT",
-            reason="L'importo deve essere maggiore di zero.",
+            reason="The amount must be greater than zero.",
             required_next_step="FIX_AMOUNT",
             reason_codes=["non_positive_amount"],
         )
     if data_freshness != "fresh":
         return _route(
             route="BLOCKED",
-            reason="I dati bancari non sono abbastanza aggiornati per autorizzare l'azione.",
+            reason="Banking data is not fresh enough to authorize the action.",
             required_next_step="REFRESH_CONTEXT",
             reason_codes=["stale_or_unavailable_bank_context"],
         )
     if account_ownership == "shared":
         return _route(
             route="CO_APPROVAL_REQUIRED",
-            reason="Il conto condiviso richiede approvazione del secondo intestatario.",
+            reason="The shared account requires approval from the second account holder.",
             required_next_step="REQUEST_CO_APPROVAL",
             reason_codes=["shared_account", "multi_principal_authorization"],
         )
     if recipient_status == "new":
         return _route(
             route="STEP_UP_REQUIRED",
-            reason="Il beneficiario nuovo richiede verifica rafforzata.",
+            reason="The new beneficiary requires step-up verification.",
             required_next_step="REQUEST_MFA",
             reason_codes=["new_beneficiary"],
         )
     if transfer_scope == "external":
         return _route(
             route="STEP_UP_REQUIRED",
-            reason="Il trasferimento esterno richiede verifica rafforzata.",
+            reason="The external transfer requires step-up verification.",
             required_next_step="REQUEST_MFA",
             reason_codes=["external_transfer"],
         )
     if auth_level != "mfa_verified":
         return _route(
             route="STEP_UP_REQUIRED",
-            reason="Il contesto cliente non ha una verifica MFA recente.",
+            reason="The customer context does not have a recent MFA verification.",
             required_next_step="REQUEST_MFA",
             reason_codes=["missing_recent_mfa"],
         )
     if numeric_amount > float(autonomous_transfer_limit_eur):
         return _route(
             route="STEP_UP_REQUIRED",
-            reason="L'importo supera il limite di trasferimento autonomo.",
+            reason="The amount exceeds the autonomous transfer limit.",
             required_next_step="REQUEST_MFA",
             reason_codes=["amount_above_autonomous_limit"],
         )
     return _route(
         route="APPROVAL_REQUIRED",
-        reason="Spostamento verso una destinazione interna esistente e affidabile.",
+        reason="Movement toward an existing trusted internal destination.",
         required_next_step="CUSTOMER_APPROVAL",
         reason_codes=["money_movement", "trusted_existing_internal_target"],
     )
@@ -129,10 +129,10 @@ def sanitize_customer_response(text: str) -> str:
     if not response_has_customer_unsafe_content(text):
         return text
     return (
-        "Posso aiutarti usando solo i dati verificati del tuo contesto bancario. "
-        "Non posso mostrare dettagli tecnici interni o strumenti non disponibili. "
-        "Dimmi quale informazione vuoi verificare, ad esempio saldo totale, conti, "
-        "spese per categoria o impatto di una proposta."
+        "I can help using only verified data from your banking context. "
+        "I cannot show internal technical details or unavailable tools. "
+        "Tell me what you want to verify, such as total balance, accounts, "
+        "spending by category, or proposal impact."
     )
 
 

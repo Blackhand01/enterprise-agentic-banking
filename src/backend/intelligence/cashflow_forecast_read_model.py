@@ -85,7 +85,7 @@ def _opening_cashflow_point(
         "balance": balance,
         "balance_after_action": balance_after_action,
         "kind": "previsione",
-        "event": "Saldo disponibile attuale",
+        "event": "Available balance attuale",
         "amount": 0.0,
     }
 

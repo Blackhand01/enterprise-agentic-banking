@@ -87,7 +87,7 @@ def _emergency_goal_payload(
 ) -> dict[str, Any]:
     target_label = month_label(metrics["target_date"])
     return {
-        "goal_name": "Fondo emergenze",
+        "goal_name": "Emergency fund",
         "target_balance": metrics["target_balance"],
         "current_balance": metrics["current_balance"],
         "balance_after_agent_action": metrics["balance_after_action"],
@@ -190,21 +190,21 @@ def _status_summary(
 ) -> str:
     if is_behind_plan:
         prefix = (
-            f"Al ritmo storico stai accantonando {historical_monthly:.2f} EUR/mese, "
-            f"ma per arrivare entro {target_label} servono {required_monthly:.2f} EUR/mese."
+            f"At the historical pace you are setting aside {historical_monthly:.2f} EUR/month, "
+            f"but to arrive by {target_label} you need {required_monthly:.2f} EUR/month."
         )
     else:
         prefix = (
-            f"Il ritmo storico di {historical_monthly:.2f} EUR/mese copre il piano "
-            f"richiesto di {required_monthly:.2f} EUR/mese."
+            f"The historical pace of {historical_monthly:.2f} EUR/month covers the "
+            f"required plan of {required_monthly:.2f} EUR/month."
         )
     if (
         proposal.get("action_type") == "TRANSFER"
         and float(proposal.get("amount", 0.0)) > 0
     ):
         return (
-            f"{prefix} Se approvi l'azione proposta, il contributo mensile ancora "
-            f"necessario scende a {required_after_action:.2f} EUR/mese."
+            f"{prefix} If you approve the proposed action, the remaining monthly "
+            f"contribution drops to {required_after_action:.2f} EUR/month."
         )
     return prefix
 
@@ -219,13 +219,13 @@ def _revised_target_date(target_date: date, proposal: dict[str, Any]) -> date:
 def _timeline_note(proposal: dict[str, Any]) -> str:
     reason_codes = proposal.get("reason_codes", [])
     if proposal.get("action_type") == "TRANSFER":
-        return "Approvando l'azione, il contributo mensile richiesto diminuisce."
+        return "Approving the action lowers the required monthly contribution."
     if "unexpected_expense_detected" in reason_codes:
-        return "Dopo l'imprevisto l'agente mette in pausa il trasferimento e sposta la timeline di un mese."
-    return "L'agente preserva liquidita e richiede revisione prima di muovere fondi."
+        return "After the unexpected expense, the agent pauses the transfer and shifts the timeline by one month."
+    return "The agent preserves liquidity and requests review before moving funds."
 
 
 def _historical_eta_label(today: date, historical_months: int | None) -> str:
     if historical_months is None:
-        return "Non stimabile"
+        return "Not estimable"
     return month_label(add_months(today, historical_months))

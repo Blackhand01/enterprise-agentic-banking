@@ -1,56 +1,56 @@
 [
   {
     "id": "doc_transfer_security_thresholds_v2",
-    "title": "Soglie di sicurezza per i trasferimenti",
+    "title": "Transfer security thresholds",
     "category": "payments_and_transfers",
     "version": "2.0",
     "is_stale": false,
-    "body": "Bonifici e trasferimenti di denaro devono essere valutati in base a importo, beneficiario, novita del pattern e reversibilita. Un trasferimento verso un conto o saving pot gia intestato allo stesso cliente puo essere proposto dall'agente. Se l'importo supera il limite di rischio configurato per il profilo cliente, se il beneficiario e nuovo, o se il pattern e anomalo rispetto allo storico, il sistema deve richiedere approvazione esplicita o autenticazione step-up secondo la route di rischio corrente. Il modello AI non puo autorizzare autonomamente movimenti di denaro.",
+    "body": "Payments and money transfers must be evaluated by amount, beneficiary, pattern novelty, and reversibility. A transfer to an account or savings pot already owned by the same customer may be proposed by the agent. If the amount exceeds the configured risk limit for the customer profile, if the beneficiary is new, or if the pattern is anomalous compared with history, the system must require explicit approval or step-up authentication according to the current risk route. The AI model cannot autonomously authorize money movement.",
     "risk_level": "HIGH"
   },
   {
     "id": "doc_savings_optimization_v1",
-    "title": "Linee guida per ottimizzazione risparmio",
+    "title": "Savings optimization guidelines",
     "category": "savings",
     "version": "1.0",
     "is_stale": false,
-    "body": "L'agente puo proporre ottimizzazioni di liquidita quando rileva saldo inattivo dopo accredito stipendio, purche verifichi uscite previste nei successivi 30 giorni e obiettivi di risparmio attivi. Il cliente deve vedere importo proposto, saldo previsto dopo l'azione, motivo della proposta e livello di rischio. Spostamenti verso saving pot gia esistenti sono considerati a rischio medio se superiori al limite autonomo cliente.",
+    "body": "The agent may propose liquidity optimizations when it detects idle balance after salary credit, provided it verifies expected outflows over the next 30 days and active savings goals. The customer must see the proposed amount, projected balance after the action, reason for the proposal, and risk level. Movements to existing savings pots are considered medium risk when they exceed the customer's autonomous limit.",
     "risk_level": "MEDIUM"
   },
   {
     "id": "doc_grounding_no_hallucination_v1",
-    "title": "Policy di grounding e anti-allucinazione",
+    "title": "Grounding and anti-hallucination policy",
     "category": "grounding",
     "version": "1.0",
     "is_stale": false,
-    "body": "Saldi, importi, transazioni, beneficiari e stato del ledger devono provenire esclusivamente da Bank Data APIs o read model controllati. Il retrieval documentale puo essere usato per policy e descrizioni prodotto, ma non deve mai essere usato come fonte di verita per numeri finanziari. Se un dato richiesto non e disponibile, l'agente deve dichiarare incertezza e non inventare valori.",
+    "body": "Balances, amounts, transactions, beneficiaries, and ledger state must come exclusively from Bank Data APIs or controlled read models. Document retrieval may be used for policies and product descriptions, but must never be used as the source of truth for financial numbers. If requested data is unavailable, the agent must state uncertainty and must not invent values.",
     "risk_level": "HIGH"
   },
   {
     "id": "doc_customer_notifications_v1",
-    "title": "Policy notifiche cliente",
+    "title": "Customer notifications policy",
     "category": "communications",
     "version": "1.0",
     "is_stale": false,
-    "body": "Per azioni proposte dall'agente, il cliente deve ricevere comunicazione chiara nel canale preferito. Le notifiche devono distinguere tra proposta, azione approvata, azione autonoma a basso rischio e azione bloccata. Per azioni che richiedono approvazione, il messaggio deve includere motivo, importo, conto sorgente, destinazione e possibilita di modificare o rifiutare.",
+    "body": "For actions proposed by the agent, the customer must receive clear communication in the preferred channel. Notifications must distinguish between proposal, approved action, low-risk autonomous action, and blocked action. For actions that require approval, the message must include reason, amount, source account, destination, and the ability to modify or reject.",
     "risk_level": "LOW"
   },
   {
     "id": "doc_joint_accounts_authorization_v1",
-    "title": "Policy autorizzazione conti condivisi",
+    "title": "Shared-account authorization policy",
     "category": "shared_accounts",
     "version": "1.0",
     "is_stale": false,
-    "body": "Per conti cointestati o condivisi, il sistema deve verificare le regole di autorizzazione multi-principal. Se una policy richiede co-approvazione, l'agente puo preparare la proposta ma non puo eseguirla finche tutti gli approvatori richiesti non hanno confermato. In caso di preferenze in conflitto, prevale la regola piu conservativa.",
+    "body": "For joint or shared accounts, the system must verify multi-principal authorization rules. If a policy requires co-approval, the agent may prepare the proposal but cannot execute it until all required approvers have confirmed. In conflicting preferences, the most conservative rule prevails.",
     "risk_level": "HIGH"
   },
   {
     "id": "doc_legacy_autonomous_transfer_limit_v0",
-    "title": "Limite autonomo legacy per trasferimenti",
+    "title": "Legacy autonomous transfer limit",
     "category": "payments_and_transfers",
     "version": "0.0",
     "is_stale": true,
-    "body": "Policy obsoleta: i trasferimenti sotto 1000 EUR possono essere eseguiti autonomamente dall'agente senza approvazione cliente. Questa policy e stata sostituita da doc_transfer_security_thresholds_v2 e deve essere ignorata dal retrieval.",
+    "body": "Stale policy: transfers below EUR 1000 may be executed autonomously by the agent without customer approval. This policy has been replaced by doc_transfer_security_thresholds_v2 and must be ignored by retrieval.",
     "risk_level": "HIGH"
   }
 ]

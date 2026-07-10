@@ -8,7 +8,7 @@ from typing import Any
 def default_emergency_fund_goal() -> dict[str, Any]:
     return {
         "goal_id": "emergency_fund",
-        "description": "Raggiungere 10.000 EUR nel fondo emergenze entro 18 mesi.",
+        "description": "Reach EUR 10,000 in the emergency fund within 18 months.",
         "target_months": 18,
         "risk_preference": "balanced",
     }

@@ -3,12 +3,12 @@
     "message_id": "msg_001",
     "timestamp": "2026-07-09T09:00:00+02:00",
     "role": "assistant",
-    "content": "Ciao Stefano, ho caricato il tuo contesto finanziario aggiornato. Posso aiutarti a rivedere saldo, spese recenti e obiettivi di risparmio."
+    "content": "Hi Stefano, I loaded your updated financial context. I can help you review balances, recent spending, and savings goals."
   },
   {
     "message_id": "msg_002",
     "timestamp": "2026-07-09T09:00:12+02:00",
     "role": "user",
-    "content": "Mostrami se c'e liquidita inattiva dopo lo stipendio."
+    "content": "Show me whether there is idle liquidity after salary."
   }
 ]

@@ -119,7 +119,7 @@ class CustomerBankingReadStore:
                        amount, category, display_name, retrieval_text, direction
                 FROM transactions
                 WHERE amount < 0
-                  AND category != 'risparmio'
+                  AND category != 'savings'
                 ORDER BY date DESC, created_at DESC, transaction_id DESC
                 LIMIT ?
                 """,
@@ -159,7 +159,7 @@ class CustomerBankingReadStore:
                 """
                 SELECT transaction_id, account_id, date, merchant, amount, category
                 FROM transactions
-                WHERE category = 'stipendio'
+                WHERE category = 'salary'
                 ORDER BY date DESC, created_at DESC
                 LIMIT 1
                 """
@@ -211,7 +211,7 @@ class CustomerBankingReadStore:
 
 def _activity_row(item: dict[str, Any]) -> dict[str, Any]:
     is_internal_saving = (
-        item.get("category") == "risparmio"
+        item.get("category") == "savings"
         and item.get("transfer_id")
         and item.get("direction") == "out"
     )
@@ -224,7 +224,7 @@ def _activity_row(item: dict[str, Any]) -> dict[str, Any]:
             else item.get("display_name") or item["merchant"]
         ),
         "subtitle": (
-            "Conto corrente -> Fondo emergenze"
+            "Checking account -> Emergency fund"
             if is_internal_saving
             else item["category"]
         ),

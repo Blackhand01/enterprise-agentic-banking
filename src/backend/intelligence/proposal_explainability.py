@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 
-# emergency_fund_proposal_evidence.py
 def build_emergency_fund_proposal_evidence(
     *,
     checking: dict[str, Any],
@@ -21,61 +20,61 @@ def build_emergency_fund_proposal_evidence(
     projected_balance = round(checking["available_balance"] + checking_delta, 2)
     projected_emergency = round(emergency["balance"] + emergency_delta, 2)
     action_purpose = (
-        "Azione candidata: recuperare liquidita dal fondo emergenze."
+        "Candidate action: recover liquidity from the emergency fund."
         if action_type == "TRANSFER_REVERSE"
-        else "Azione candidata: spostare liquidita verso una destinazione fidata."
+        else "Candidate action: move liquidity to a trusted destination."
     )
 
     return [
         _evidence_row(
-            group="Contesto bancario fornito all'agente",
-            label="Saldo disponibile conto corrente",
+            group="Banking context provided to the agent",
+            label="Checking available balance",
             value=checking["available_balance"],
-            source="Read model conti cliente",
-            purpose="Usato dall'agente per valutare se esiste liquidita disponibile.",
+            source="Customer accounts read model",
+            purpose="Used by the agent to assess available liquidity.",
         ),
         _evidence_row(
-            group="Contesto bancario fornito all'agente",
-            label="Spese pianificate prossimi 30 giorni",
+            group="Banking context provided to the agent",
+            label="Scheduled expenses next 30 days",
             value=round(upcoming, 2),
-            source="Pagamenti pianificati",
-            purpose="Usato dall'agente per evitare proposte che scoprano spese imminenti.",
+            source="Scheduled payments",
+            purpose="Used by the agent to avoid proposals that would leave upcoming expenses uncovered.",
         ),
         _evidence_row(
-            group="Contesto bancario fornito all'agente",
-            label="Fondo emergenze attuale",
+            group="Banking context provided to the agent",
+            label="Current emergency fund",
             value=emergency["balance"],
-            source="Read model obiettivi risparmio",
-            purpose="Usato dall'agente per verificare che il fondo sia sotto obiettivo.",
+            source="Savings goals read model",
+            purpose="Used by the agent to verify the fund is below target.",
         ),
         _evidence_row(
-            group="Verifiche deterministiche prima dell'esecuzione",
-            label="Saldo previsto dopo proposta",
+            group="Deterministic checks before execution",
+            label="Projected balance after proposal",
             value=projected_balance,
-            source="Controllo saldo post-azione",
-            purpose="Calcolo deterministico per verificare l'impatto prima di mostrare la proposta.",
+            source="Post-action balance check",
+            purpose="Deterministic calculation to verify impact before showing the proposal.",
         ),
         _evidence_row(
-            group="Verifiche deterministiche prima dell'esecuzione",
-            label="Fondo emergenze dopo proposta",
+            group="Deterministic checks before execution",
+            label="Emergency fund after proposal",
             value=projected_emergency,
-            source="Controllo obiettivo risparmio",
-            purpose="Calcolo deterministico dell'impatto sul saving pot.",
+            source="Savings goal check",
+            purpose="Deterministic calculation of impact on the savings pot.",
         ),
         _evidence_row(
-            group="Piano proposto dall'agente",
-            label="Importo proposto",
+            group="Plan proposed by the agent",
+            label="Proposed amount",
             value=amount,
-            source="Piano agente basato sul contesto verificato",
+            source="Agent plan based on verified context",
             purpose=action_purpose,
         ),
         {
-            "group": "Decisione Safety and Approval",
-            "label": "Route di rischio",
+            "group": "Safety and Approval decision",
+            "label": "Risk route",
             "value": route["route"],
             "unit": "route",
-            "source": "Risk engine deterministico",
-            "purpose": "Il modello non decide l'autorizzazione: la route e calcolata da regole testabili.",
+            "source": "Deterministic risk engine",
+            "purpose": "The model does not decide authorization: the route is calculated by testable rules.",
         },
     ]
 
@@ -118,7 +117,6 @@ def _emergency_delta(action_type: str, amount: float, already_executed: bool) ->
     return 0.0
 
 
-# emergency_fund_reasoning_trace.py
 def build_emergency_fund_reasoning_trace(
     *,
     checking: dict[str, Any],
@@ -140,49 +138,49 @@ def build_emergency_fund_reasoning_trace(
 
     return [
         {
-            "step": "Analisi_Contesto",
-            "title": "Analisi contesto",
+            "step": "Context_Analysis",
+            "title": "Context analysis",
             "summary": (
-                "Ho letto saldo conto corrente, fondo emergenze e spese pianificate "
-                "prima di proporre qualsiasi movimento."
+                "I read checking balance, emergency fund, and scheduled expenses "
+                "before proposing any movement."
             ),
             "facts": [
-                _money_fact("Saldo disponibile", checking["available_balance"]),
-                _money_fact("Spese note 30 giorni", upcoming),
-                _money_fact("Fondo emergenze attuale", emergency["balance"]),
+                _money_fact("Available balance", checking["available_balance"]),
+                _money_fact("Known expenses 30 days", upcoming),
+                _money_fact("Current emergency fund", emergency["balance"]),
             ],
         },
         {
-            "step": "Valutazione_Obiettivo",
-            "title": "Valutazione obiettivo",
+            "step": "Goal_Evaluation",
+            "title": "Goal evaluation",
             "summary": goal.get(
                 "description",
-                "Costruire il fondo emergenze mantenendo liquidita sufficiente.",
+                "Build the emergency fund while preserving sufficient liquidity.",
             ),
             "facts": [
-                _money_fact("Obiettivo fondo", target_balance),
-                _money_fact("Gap attuale", current_gap),
-                _money_fact("Gap dopo proposta", projected_gap),
+                _money_fact("Fund target", target_balance),
+                _money_fact("Current gap", current_gap),
+                _money_fact("Gap after proposal", projected_gap),
             ],
         },
         {
-            "step": "Logica_Decisionale",
-            "title": "Logica decisionale",
+            "step": "Decision_Logic",
+            "title": "Decision logic",
             "summary": plan["recommended_action"],
             "facts": [
-                {"label": "Azione", "value": plan["action_type"]},
-                _money_fact("Importo", amount),
-                _money_fact("Saldo previsto conto", projected_balance),
+                {"label": "Action", "value": plan["action_type"]},
+                _money_fact("Amount", amount),
+                _money_fact("Projected checking balance", projected_balance),
             ],
         },
         {
-            "step": "Verifica_Compliance",
-            "title": "Verifica safety",
+            "step": "Compliance_Check",
+            "title": "Safety check",
             "summary": route["reason"],
             "facts": [
-                {"label": "Route rischio", "value": route["route"]},
-                {"label": "Prossimo passo", "value": route["required_next_step"]},
-                _money_fact("Margine dopo spese note", projected_expense_buffer),
+                {"label": "Risk route", "value": route["route"]},
+                {"label": "Next step", "value": route["required_next_step"]},
+                _money_fact("Margin after known expenses", projected_expense_buffer),
             ],
         },
     ]

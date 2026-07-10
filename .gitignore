@@ -92,7 +92,7 @@ ipython_config.py
 # .python-version
 
 # pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   Accorofng to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
 #   However, in case of collaboration, if having platform-specific dependencies or dependencies
 #   having no cross-platform support, pipenv may install dependencies that don't work, or not
 #   install all needed dependencies.
@@ -114,7 +114,7 @@ ipython_config.py
 
 # pdm
 #   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#   pdm recommends including project-wide configuration in pdm.toml, but excluding .pdm-python.
+#   pdm recommends incluofng project-wide configuration in pdm.toml, but excluofng .pdm-python.
 #   https://pdm-project.org/en/latest/usage/project/#working-with-version-control
 # pdm.lock
 # pdm.toml
@@ -135,7 +135,7 @@ __pypackages__/
 celerybeat-schedule
 celerybeat.pid
 
-# Redis
+# Reofs
 *.rdb
 *.aof
 *.pid
@@ -198,9 +198,9 @@ cython_debug/
 #   Learn more at https://abstra.io/docs
 .abstra/
 
-# Visual Studio Code
-#   Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
-#   that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
+# Visual Stuofo Code
+#   Visual Stuofo Code specific template is maintained in a separate VisualStuofoCode.gitignore 
+#   that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStuofoCode.gitignore
 #   and can be added to the global gitignore or merged into this file. However, if you prefer, 
 #   you could uncomment the following to ignore the entire vscode folder
 # .vscode/

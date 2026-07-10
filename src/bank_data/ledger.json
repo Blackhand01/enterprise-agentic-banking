@@ -37,7 +37,7 @@
       "date": "2026-07-08",
       "merchant": "Tata Innovation Hub Payroll",
       "amount": 3200.0,
-      "category": "stipendio"
+      "category": "salary"
     },
     {
       "transaction_id": "txn_20260707_rent_001",
@@ -45,8 +45,8 @@
       "date": "2026-07-07",
       "merchant": "Nordic Homes Rent",
       "amount": -950.0,
-      "category": "affitto",
-      "display_name": "Pagamento affitto casa presso Nordic Homes Rent",
+      "category": "rent",
+      "display_name": "Home rent payment at Nordic Homes Rent",
       "retrieval_text": "Home housing household rent expense payment at Nordic Homes Rent"
     },
     {
@@ -55,7 +55,7 @@
       "date": "2026-07-06",
       "merchant": "Fresh Market",
       "amount": -86.4,
-      "category": "spesa"
+      "category": "groceries"
     },
     {
       "transaction_id": "txn_20260705_utility_001",
@@ -63,7 +63,7 @@
       "date": "2026-07-05",
       "merchant": "Nordic Energy",
       "amount": -132.2,
-      "category": "bollette"
+      "category": "utilities"
     },
     {
       "transaction_id": "txn_20260704_sport_001",
@@ -71,8 +71,8 @@
       "date": "2026-07-04",
       "merchant": "ProSki Shop",
       "amount": -150.0,
-      "category": "sport",
-      "display_name": "Acquisto attrezzatura sci e montagna presso ProSki Shop",
+      "category": "sports",
+      "display_name": "Ski and mountain equipment purchase at ProSki Shop",
       "retrieval_text": "Ski and mountain equipment purchase at ProSki Shop"
     },
     {
@@ -81,7 +81,7 @@
       "date": "2026-07-03",
       "merchant": "City Transit",
       "amount": -48.0,
-      "category": "trasporti"
+      "category": "transport"
     },
     {
       "transaction_id": "txn_20260702_subscription_001",
@@ -89,7 +89,7 @@
       "date": "2026-07-02",
       "merchant": "CloudStorage Premium",
       "amount": -12.99,
-      "category": "abbonamenti"
+      "category": "subscriptions"
     },
     {
       "transaction_id": "txn_20260701_restaurant_001",
@@ -97,15 +97,15 @@
       "date": "2026-07-01",
       "merchant": "Riverside Bistro",
       "amount": -64.5,
-      "category": "ristoranti"
+      "category": "restaurants"
     },
     {
       "transaction_id": "txn_20260630_health_001",
       "account_id": "acc_checking_001",
       "date": "2026-06-30",
-      "merchant": "City Medical Clinic",
+      "merchant": "City Meofcal Clinic",
       "amount": -220.0,
-      "category": "salute"
+      "category": "healthcare"
     },
     {
       "transaction_id": "txn_20260629_savings_001",
@@ -113,7 +113,7 @@
       "date": "2026-06-29",
       "merchant": "Emergency_Fund",
       "amount": -250.0,
-      "category": "risparmio"
+      "category": "savings"
     },
     {
       "transaction_id": "txn_20260629_savings_002",
@@ -121,7 +121,7 @@
       "date": "2026-06-29",
       "merchant": "Checking",
       "amount": 250.0,
-      "category": "risparmio"
+      "category": "savings"
     },
     {
       "transaction_id": "txn_20260628_sport_001",
@@ -129,8 +129,8 @@
       "date": "2026-06-28",
       "merchant": "Trail Running Store",
       "amount": -100.0,
-      "category": "sport",
-      "display_name": "Acquisto attrezzatura trekking e trail running presso Trail Running Store",
+      "category": "sports",
+      "display_name": "Trekking and trail running equipment purchase at Trail Running Store",
       "retrieval_text": "Trekking and trail running equipment purchase at Trail Running Store"
     }
   ],
@@ -141,21 +141,21 @@
       "date": "2026-07-15",
       "merchant": "FiberNet",
       "amount": -39.9,
-      "category": "bollette"
+      "category": "utilities"
     },
     {
       "scheduled_id": "sch_20260720_creditcard_001",
       "account_id": "acc_checking_001",
       "date": "2026-07-20",
-      "merchant": "Credit Card Settlement",
+      "merchant": "Creoft Card Settlement",
       "amount": -720.0,
-      "category": "carte"
+      "category": "cards"
     }
   ],
   "monthly_snapshots": [
     {
       "month": "2025-08",
-      "month_label": "Ago 2025",
+      "month_label": "Aug 2025",
       "income_eur": 3100.0,
       "rent_eur": 930.0,
       "utilities_eur": 128.0,
@@ -168,7 +168,7 @@
     },
     {
       "month": "2025-09",
-      "month_label": "Set 2025",
+      "month_label": "Sep 2025",
       "income_eur": 3100.0,
       "rent_eur": 930.0,
       "utilities_eur": 121.5,
@@ -181,7 +181,7 @@
     },
     {
       "month": "2025-10",
-      "month_label": "Ott 2025",
+      "month_label": "Oct 2025",
       "income_eur": 3100.0,
       "rent_eur": 930.0,
       "utilities_eur": 135.2,
@@ -207,7 +207,7 @@
     },
     {
       "month": "2025-12",
-      "month_label": "Dic 2025",
+      "month_label": "Dec 2025",
       "income_eur": 3150.0,
       "rent_eur": 950.0,
       "utilities_eur": 168.4,
@@ -220,7 +220,7 @@
     },
     {
       "month": "2026-01",
-      "month_label": "Gen 2026",
+      "month_label": "Jan 2026",
       "income_eur": 3150.0,
       "rent_eur": 950.0,
       "utilities_eur": 176.1,
@@ -272,7 +272,7 @@
     },
     {
       "month": "2026-05",
-      "month_label": "Mag 2026",
+      "month_label": "May 2026",
       "income_eur": 3200.0,
       "rent_eur": 950.0,
       "utilities_eur": 109.6,
@@ -285,7 +285,7 @@
     },
     {
       "month": "2026-06",
-      "month_label": "Giu 2026",
+      "month_label": "Jun 2026",
       "income_eur": 3200.0,
       "rent_eur": 950.0,
       "utilities_eur": 125.3,
@@ -298,7 +298,7 @@
     },
     {
       "month": "2026-07",
-      "month_label": "Lug 2026",
+      "month_label": "Jul 2026",
       "income_eur": 3200.0,
       "rent_eur": 950.0,
       "utilities_eur": 172.1,

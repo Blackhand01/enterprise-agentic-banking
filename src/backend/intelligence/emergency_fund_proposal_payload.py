@@ -149,12 +149,12 @@ def _proposal_explainability_fields(
 def _recommended_action(plan: dict[str, Any], amount: float) -> str:
     if plan["action_type"] == "TRANSFER_REVERSE":
         return (
-            "Le spese note superano la liquidita attuale. Propongo di ritirare "
-            f"{amount:.2f} EUR dal Fondo Emergenze per riportare il conto in una banda stabile."
+            "Known expenses exceed current liquidity. I propose withdrawing "
+            f"{amount:.2f} EUR from the Emergency Fund to bring the account back into a stable band."
         )
     if plan["action_type"] != "TRANSFER":
         return plan["recommended_action"]
     return (
-        f"Spostare {amount:.2f} EUR dal conto corrente al fondo emergenze, "
-        "mantenendo buffer e margine anti-oscillazione sul conto corrente."
+        f"Move {amount:.2f} EUR from checking to the emergency fund, "
+        "while preserving buffer and anti-oscillation margin in checking."
     )

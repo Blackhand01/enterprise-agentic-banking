@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -10,18 +10,18 @@
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <p class="eyebrow">Prototipo Parte A</p>
+          <p class="eyebrow">Part A Prototype</p>
           <h1>TCS Agentic Bank</h1>
         </div>
         <div class="top-actions">
           <span class="chip" id="user-name">Stefano</span>
-          <span class="chip strong" id="auth-level">Contesto MFA</span>
+          <span class="chip strong" id="auth-level">MFA context</span>
           <button id="deep-dive-toggle" class="secondary" type="button">
-            Storico azioni agente
+            Agent action history
           </button>
           <button id="insights-toggle" class="secondary" type="button">Insights</button>
           <button id="chat-toggle" class="secondary" type="button">Chat</button>
-          <button id="sandbox-toggle" class="secondary">⚙️ Imposta Sandbox</button>
+          <button id="sandbox-toggle" class="secondary">⚙️ Sandbox Settings</button>
         </div>
       </header>
 
@@ -30,8 +30,8 @@
           <section class="panel goal-panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Obiettivo cliente</p>
-                <!-- <h2>Fondo emergenze</h2> -->
+                <p class="eyebrow">Customer goal</p>
+                <!-- <h2>Emergency fund</h2> -->
               </div>
             </div>
             <div id="goal-summary" class="goal-summary"></div>
@@ -40,8 +40,8 @@
           <section class="panel inbox-panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Inbox agente</p>
-                <!-- <h2>Azioni proattive da supervisionare</h2> -->
+                <p class="eyebrow">Agent inbox</p>
+                <!-- <h2>Actions proattive da supervisionare</h2> -->
               </div>
             </div>
             <div id="agent-inbox" class="agent-inbox"></div>
@@ -51,8 +51,8 @@
           <section class="panel supervisor-panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Cruscotto supervisore</p>
-                <!-- <h2>Cashflow storico e previsione prossimi 30 giorni</h2> -->
+                <p class="eyebrow">Supervisor dashboard</p>
+                <!-- <h2>Historical cashflow and next 30 days forecast</h2> -->
               </div>
             </div>
             <div id="cashflow-supervisor" class="cashflow-supervisor"></div>
@@ -65,10 +65,10 @@
     <aside class="side-drawer left-drawer deep-dive-panel" id="deep-dive-panel" aria-hidden="true">
       <div class="inspector-header">
         <div>
-          <p class="eyebrow">Audit e fonti</p>
-          <h2>Storico azioni agente</h2>
+          <p class="eyebrow">Audit and sources</p>
+          <h2>Agent action history</h2>
         </div>
-        <button id="deep-dive-close" class="ghost small" type="button">Chiudi</button>
+        <button id="deep-dive-close" class="ghost small" type="button">Close</button>
       </div>
       <div class="inspector-body">
         <div id="deep-dive-content" class="deep-dive-content"></div>
@@ -79,9 +79,9 @@
       <div class="inspector-header">
         <div>
           <p class="eyebrow">Insights</p>
-          <h2>Fonti e andamento</h2>
+          <h2>Sources and trends</h2>
         </div>
-        <button id="insights-close" class="ghost small" type="button">Chiudi</button>
+        <button id="insights-close" class="ghost small" type="button">Close</button>
       </div>
       <div class="inspector-body">
         <div id="insights-content" class="deep-dive-content"></div>
@@ -91,18 +91,18 @@
     <aside class="inspector chat-drawer" id="chat-drawer" aria-hidden="true">
       <div class="inspector-header">
         <div>
-          <p class="eyebrow">Assistente cliente</p>
-          <h2>Chat contestuale</h2>
+          <p class="eyebrow">Customer assistant</p>
+          <h2>Contextual chat</h2>
         </div>
-        <button id="chat-close" class="ghost small" type="button">Chiudi</button>
+        <button id="chat-close" class="ghost small" type="button">Close</button>
       </div>
       <div class="inspector-body chat-drawer-body">
         <div class="quick-prompts">
-          <button class="ghost quick-prompt" data-prompt="Quanto ho speso in sport di recente?">
-            Spese sport
+          <button class="ghost quick-prompt" data-prompt="How much have I spent on sports recently?">
+            Sports spending
           </button>
-          <button class="ghost quick-prompt" data-prompt="Puoi dirmi il rischio del mio mutuo?">
-            Dati mutuo mancanti
+          <button class="ghost quick-prompt" data-prompt="Can you tell me the risk of my mortgage?">
+            Missing mortgage data
           </button>
         </div>
         <div class="chat-box" id="chat-box"></div>
@@ -110,9 +110,9 @@
           <input
             id="chat-input"
             type="text"
-            placeholder="Chiedi dettagli su spese, saldi o proposta."
+            placeholder="Ask about spending, balances, or the proposal."
           />
-          <button id="chat-button">Chiedi</button>
+          <button id="chat-button">Ask</button>
         </div>
       </div>
     </aside>
@@ -123,30 +123,29 @@
           <p class="eyebrow">Developer Sandbox</p>
           <h2>State Injection</h2>
         </div>
-        <button id="sandbox-close" class="ghost small">Chiudi</button>
+        <button id="sandbox-close" class="ghost small">Close</button>
       </div>
 
       <div class="inspector-body">
         <section class="sandbox-panel">
           <p class="drawer-copy">
-            Modifica direttamente lo stato bancario simulato per verificare come
-            cambiano proposta, cashflow e route di rischio.
+            Edit the simulated banking state directly to see how the proposal, cashflow, and risk route change.
           </p>
           <div class="sandbox-form">
             <label>
-              <span>Saldo corrente simulato</span>
+              <span>Simulated checking balance</span>
               <input id="sandbox-checking-balance" type="number" min="0" step="50" />
             </label>
             <label>
-              <span>Fondo emergenze attuale</span>
+              <span>Current emergency fund</span>
               <input id="sandbox-emergency-balance" type="number" min="0" step="50" />
             </label>
             <label>
-              <span>Spese note previste</span>
+              <span>Known planned expenses</span>
               <input id="sandbox-upcoming-expenses" type="number" min="0" step="10" />
             </label>
             <button id="sandbox-apply-button" class="secondary" type="button">
-              Applica mutazione di stato
+              Apply state mutation
             </button>
           </div>
           <div id="financial-rules-settings" class="financial-rules-settings sandbox-risk-settings"></div>

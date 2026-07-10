@@ -156,7 +156,7 @@ def _insert_transfer_transactions(
                 today,
                 target_name,
                 -amount,
-                "risparmio",
+                "savings",
                 _outgoing_transfer_display_name(target_name),
                 "out",
                 created_at,
@@ -168,7 +168,7 @@ def _insert_transfer_transactions(
                 today,
                 source_name,
                 amount,
-                "risparmio",
+                "savings",
                 _incoming_transfer_display_name(source_name),
                 "in",
                 created_at,
@@ -180,18 +180,18 @@ def _insert_transfer_transactions(
 
 def _outgoing_transfer_display_name(target_name: str) -> str:
     if target_name == "Emergency_Fund":
-        return "Trasferimento al fondo emergenze"
+        return "Transfer to emergency fund"
     if target_name == "Checking":
-        return "Trasferimento al conto corrente"
-    return f"Trasferimento verso {target_name}"
+        return "Transfer to checking account"
+    return f"Transfer verso {target_name}"
 
 
 def _incoming_transfer_display_name(source_name: str) -> str:
     if source_name == "Emergency_Fund":
-        return "Recupero dal fondo emergenze"
+        return "Recovery from emergency fund"
     if source_name == "Checking":
-        return "Trasferimento dal conto corrente"
-    return f"Trasferimento da {source_name}"
+        return "Transfer from checking account"
+    return f"Transfer da {source_name}"
 
 
 def _apply_transfer_to_latest_monthly_snapshot(

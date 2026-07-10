@@ -24,15 +24,15 @@ export function agentReasoningPanelHtml(currentProposal, expanded = !0) {
       : "";
   })(currentProposal);
   return html
-    ? `\n    <section class="agent-reasoning-panel inline">\n      <div class="panel-heading compact">\n        <div>\n          <p class="eyebrow">Explainability</p>\n        </div>\n        <button class="secondary small" type="button" onclick="toggleExplainabilityPanel()" aria-expanded="${expanded}">\n          ${expanded ? "Riduci" : "Apri"}\n        </button>\n      </div>\n      ${expanded ? `<div class="agent-reasoning">${html}</div>` : ""}\n    </section>\n  `
+    ? `\n    <section class="agent-reasoning-panel inline">\n      <div class="panel-heading compact">\n        <div>\n          <p class="eyebrow">Explainability</p>\n        </div>\n        <button class="secondary small" type="button" onclick="toggleExplainabilityPanel()" aria-expanded="${expanded}">\n          ${expanded ? "Collapse" : "Open"}\n        </button>\n      </div>\n      ${expanded ? `<div class="agent-reasoning">${html}</div>` : ""}\n    </section>\n  `
     : "";
 }
 function reasoningStepHtml(step) {
-  return `\n    <li class="reasoning-step">\n      <div class="reasoning-marker">${escapeHtml(((stepName = step.step), { Analisi_Contesto: "1", Valutazione_Obiettivo: "2", Logica_Decisionale: "3", Verifica_Compliance: "4" }[stepName] || ""))}</div>\n      <div class="reasoning-content">\n        <strong>${escapeHtml(step.title)}</strong>\n        <p>${escapeHtml(step.summary)}</p>\n        <div class="reasoning-facts">\n          ${(step.facts || []).map(reasoningFactHtml).join("")}\n        </div>\n      </div>\n    </li>\n  `;
+  return `\n    <li class="reasoning-step">\n      <div class="reasoning-marker">${escapeHtml(((stepName = step.step), { Context_Analysis: "1", Goal_Evaluation: "2", Decision_Logic: "3", Compliance_Check: "4" }[stepName] || ""))}</div>\n      <div class="reasoning-content">\n        <strong>${escapeHtml(step.title)}</strong>\n        <p>${escapeHtml(step.summary)}</p>\n        <div class="reasoning-facts">\n          ${(step.facts || []).map(reasoningFactHtml).join("")}\n        </div>\n      </div>\n    </li>\n  `;
   var stepName;
 }
 function reasoningFactHtml(fact) {
-  return "Route rischio" === fact.label
+  return "Risk route" === fact.label
     ? ""
     : `\n    <span>\n      ${escapeHtml(fact.label)}\n      <strong>${escapeHtml(
       (function (fact) {
@@ -61,7 +61,7 @@ export function renderSupervisorCashflow({
       ),
         expenses = Number(forecast.known_expenses_total || 0);
       if (available <= 0 && expenses <= 0)
-        return '<p class="muted">Liquidità conto corrente non disponibile.</p>';
+        return '<p class="muted">Checking liquidity unavailable.</p>';
       const horizonDays = forecast.horizon_days || 30,
         currentMargin = available - expenses,
         hasMoneyMovement = isExecutableMoneyMovement(
@@ -83,20 +83,20 @@ export function renderSupervisorCashflow({
         marginPct = clampPercent((Math.max(currentMargin, 0) / barTotal) * 100),
         bufferPct = clampPercent((safetyBuffer / barTotal) * 100),
         status =
-          marginAfterProposal >= safetyBuffer ? "Copertura ok" : "Da rivedere",
+          marginAfterProposal >= safetyBuffer ? "Coverage OK" : "Needs review",
         statusClass = marginAfterProposal >= safetyBuffer ? "ok" : "risk",
-        decisionLabel = hasMoneyMovement ? "Dopo proposta" : "Decisione agente",
-        decisionDetail = hasMoneyMovement ? status : "Liquidita preservata";
-      return `\n    <div class="liquidity-gauge" aria-label="Barra di liquidità conto corrente">\n      <div class="liquidity-gauge-header">\n        <div>\n          <p class="eyebrow">Barra di liquidità</p>\n          <h3>${eur.format(available)} disponibili sul conto corrente</h3>\n        </div>\n        <span>${horizonDays} giorni</span>\n      </div>\n\n      <div class="liquidity-bar dynamic" role="img" aria-label="Distribuzione visuale della liquidità nei prossimi ${horizonDays} giorni">\n        <div class="liquidity-segment expenses" style="width:${expensePct}%"></div>\n        <div class="liquidity-segment margin" style="width:${marginPct}%"></div>\n        ${safetyBuffer > 0 ? `<span class="liquidity-marker" style="left:${bufferPct}%"><span>Buffer</span></span>` : ""}\n      </div>\n\n      <div class="liquidity-dashboard">\n        ${liquidityTile("Uscite 30g", eur.format(expenses), "Impegni gia pianificati", "expense")}\n        ${liquidityTile(
-        "Margine ora",
+        decisionLabel = hasMoneyMovement ? "After proposal" : "Agent decision",
+        decisionDetail = hasMoneyMovement ? status : "Liquidity preserved";
+      return `\n    <div class="liquidity-gauge" aria-label="Checking liquidity bar">\n      <div class="liquidity-gauge-header">\n        <div>\n          <p class="eyebrow">Liquidity bar</p>\n          <h3>${eur.format(available)} available in checking</h3>\n        </div>\n        <span>${horizonDays} days</span>\n      </div>\n\n      <div class="liquidity-bar dynamic" role="img" aria-label="Visual liquidity distribution over the next ${horizonDays} days">\n        <div class="liquidity-segment expenses" style="width:${expensePct}%"></div>\n        <div class="liquidity-segment margin" style="width:${marginPct}%"></div>\n        ${safetyBuffer > 0 ? `<span class="liquidity-marker" style="left:${bufferPct}%"><span>Buffer</span></span>` : ""}\n      </div>\n\n      <div class="liquidity-dashboard">\n        ${liquidityTile("30d outflows", eur.format(expenses), "Already planned commitments", "expense")}\n        ${liquidityTile(
+        "Current margin",
         eur.format(currentMargin),
         (function (margin, safetyBuffer) {
           const delta = margin - safetyBuffer;
           return Math.abs(delta) < 0.005
-            ? "Al buffer minimo"
+            ? "At minimum buffer"
             : delta > 0
-              ? "Sopra buffer cliente"
-              : "Sotto buffer cliente";
+              ? "Above customer buffer"
+              : "Below customer buffer";
         })(currentMargin, safetyBuffer),
         currentMargin >= safetyBuffer ? "safe" : "risk",
       )}\n        ${liquidityTile(decisionLabel, eur.format(marginAfterProposal), decisionDetail, statusClass)}\n      </div>\n    </div>\n  `;
@@ -117,7 +117,7 @@ export function renderInitialChat() {
   $("chat-box").children.length ||
     addMessage(
       "assistant",
-      "Chiedimi informazioni sul contesto bancario caricato.",
+      "Ask me about the loaded banking context.",
     );
 }
 export function addMessage(role, text) {
@@ -135,9 +135,9 @@ export function renderChatToolCard(toolResult) {
       !toolResult.transactions.length)
   ) {
     node.classList.add("empty");
-    const query = toolResult.search_query || toolResult.category || "richiesta";
+    const query = toolResult.search_query || toolResult.category || "request";
     return (
-      (node.innerHTML = `\n      <strong>Transazioni considerate</strong>\n      <span>0 movimenti trovati per "${escapeHtml(query)}"</span>\n    `),
+      (node.innerHTML = `\n      <strong>Transactions considered</strong>\n      <span>0 movements found for "${escapeHtml(query)}"</span>\n    `),
       $("chat-box").appendChild(node),
       void ($("chat-box").scrollTop = $("chat-box").scrollHeight)
     );
@@ -148,7 +148,7 @@ export function renderChatToolCard(toolResult) {
       0,
     ),
   );
-  ((node.innerHTML = `\n    <strong>Transazioni considerate</strong>\n    <span>${toolResult.count} movimenti · totale ${eur.format(total)}</span>\n    <div class="chat-transaction-list">\n      ${toolResult.transactions
+  ((node.innerHTML = `\n    <strong>Transactions considered</strong>\n    <span>${toolResult.count} movements · total ${eur.format(total)}</span>\n    <div class="chat-transaction-list">\n      ${toolResult.transactions
     .slice(0, 4)
     .map(
       (tx) =>
@@ -166,18 +166,18 @@ export function renderDeepDive({ state: state, deepDiveOpen: deepDiveOpen }) {
     panel = $("deep-dive-panel"),
     content = $("deep-dive-content");
   (toggle &&
-    ((toggle.textContent = "Storico azioni agente"),
+    ((toggle.textContent = "Agent action history"),
       toggle.setAttribute("aria-expanded", String(deepDiveOpen))),
     panel &&
     (panel.classList.toggle("open", deepDiveOpen),
       panel.setAttribute("aria-hidden", deepDiveOpen ? "false" : "true")),
     content.classList.toggle("open", deepDiveOpen),
     (content.innerHTML = deepDiveOpen
-      ? `\n    <div class="source-note">Qui trovi solo le azioni agente registrate e il relativo audit trail.</div>\n    ${(function (
+      ? `\n    <div class="source-note">Here you can find only registered agent actions and their audit trail.</div>\n    ${(function (
         auditEvents,
       ) {
         if (!auditEvents.length)
-          return '<p class="muted">Nessuna azione agente registrata in questa sessione.</p>';
+          return '<p class="muted">No agent action recorded in this session.</p>';
         return `\n    <div class="audit-list">\n      ${auditEvents
           .map((event) =>
             (function (event) {
@@ -185,13 +185,13 @@ export function renderDeepDive({ state: state, deepDiveOpen: deepDiveOpen }) {
                 return (
                   String(title)
                     .replace(/^[^\p{L}\p{N}]+/u, "")
-                    .trim() || "Azione agente"
+                    .trim() || "Agent action"
                 );
-              })(event.proposal?.title || "Azione agente"),
+              })(event.proposal?.title || "Agent action"),
                 status =
                   event.tool_result?.status ||
                   event.proposal?.route ||
-                  "Registrata",
+                  "Recorded",
                 amount = Number(
                   event.tool_result?.amount || event.proposal?.amount || 0,
                 ),
@@ -205,7 +205,7 @@ export function renderDeepDive({ state: state, deepDiveOpen: deepDiveOpen }) {
                   .join("");
               return `\n    <article class="audit-item">\n      <span>${escapeHtml(
                 (function (timestamp) {
-                  if (!timestamp) return "Timestamp non disponibile";
+                  if (!timestamp) return "Timestamp unavailable";
                   const parsed = new Date(timestamp);
                   return Number.isNaN(parsed.getTime())
                     ? timestamp
@@ -214,7 +214,7 @@ export function renderDeepDive({ state: state, deepDiveOpen: deepDiveOpen }) {
                       timeStyle: "short",
                     });
                 })(event.timestamp),
-              )}</span>\n      <strong>${escapeHtml(title)}</strong>\n      <small>${escapeHtml(event.trace_id || "trace non disponibile")} · ${escapeHtml(status)}${amountCopy}</small>\n      ${layers ? `<div class="audit-layer-list">${layers}</div>` : ""}\n    </article>\n  `;
+              )}</span>\n      <strong>${escapeHtml(title)}</strong>\n      <small>${escapeHtml(event.trace_id || "trace unavailable")} · ${escapeHtml(status)}${amountCopy}</small>\n      ${layers ? `<div class="audit-layer-list">${layers}</div>` : ""}\n    </article>\n  `;
             })(event),
           )
           .join("")}\n    </div>\n  `;
@@ -237,17 +237,17 @@ export function renderInsights({ state: state, insightsOpen: insightsOpen }) {
   )
     return void (content.innerHTML = "");
   const snapshots = state.monthly_snapshots || [];
-  content.innerHTML = `\n    <div class="source-note">Qui trovi i dati storici e le transazioni usate come grounding. I numeri arrivano dal ledger SQLite e dai read model, non dalla memoria del modello.</div>\n    <div class="deep-dive-grid">\n      <section class="evidence-card">\n        <h3>Andamento saldi</h3>\n        ${renderLineChart(snapshots)}\n      </section>\n      <section class="evidence-card">\n        <h3>Spese mensili considerate</h3>\n        ${(function (
+  content.innerHTML = `\n    <div class="source-note">Here you can inspect historical data and transactions used for grounding. Numbers come from the SQLite ledger and read models, not from model memory.</div>\n    <div class="deep-dive-grid">\n      <section class="evidence-card">\n        <h3>Balance trend</h3>\n        ${renderLineChart(snapshots)}\n      </section>\n      <section class="evidence-card">\n        <h3>Monthly spending considered</h3>\n        ${(function (
     snapshots,
   ) {
     if (!snapshots.length)
-      return '<p class="muted">Storico mensile non disponibile.</p>';
+      return '<p class="muted">Monthly history unavailable.</p>';
     const categories = [
-      ["rent_eur", "Affitto", "rent"],
-      ["utilities_eur", "Bollette", "utilities"],
-      ["groceries_eur", "Spesa", "groceries"],
-      ["sport_eur", "Sport", "sport"],
-      ["discretionary_eur", "Discrezionali", "discretionary"],
+      ["rent_eur", "Rent", "rent"],
+      ["utilities_eur", "Utilities", "utilities"],
+      ["groceries_eur", "Groceries", "groceries"],
+      ["sport_eur", "Sports", "sports"],
+      ["discretionary_eur", "Discretionary", "discretionary"],
     ],
       totals = snapshots.map((snapshot) =>
         categories.reduce((sum, [key]) => sum + snapshot[key], 0),
@@ -268,17 +268,17 @@ export function renderInsights({ state: state, insightsOpen: insightsOpen }) {
     return `\n    <div class="bar-chart">${rows}</div>\n    <div class="chart-legend wrap">\n      ${categories.map(([, label, className]) => `<span><i class="legend-dot ${className}"></i>${label}</span>`).join("")}\n    </div>\n  `;
   })(
     snapshots,
-  )}\n      </section>\n      <section class="evidence-card wide">\n        <h3>Transazioni considerate</h3>\n        ${(function (
+  )}\n      </section>\n      <section class="evidence-card wide">\n        <h3>Transactions considered</h3>\n        ${(function (
     transactions,
   ) {
     if (!transactions.length)
-      return '<p class="muted">Nessuna transazione disponibile.</p>';
-    return `\n    <div class="table-wrap">\n      <table class="data-table">\n        <thead>\n          <tr>\n            <th>Data</th>\n            <th>Merchant</th>\n            <th>Categoria</th>\n            <th>Importo</th>\n          </tr>\n        </thead>\n        <tbody>${transactions.map((tx) => `\n        <tr>\n          <td>${tx.date}</td>\n          <td>${escapeHtml(tx.merchant)}</td>\n          <td>${escapeHtml(tx.category)}</td>\n          <td class="numeric">${eur.format(tx.amount)}</td>\n        </tr>\n      `).join("")}</tbody>\n      </table>\n    </div>\n  `;
+      return '<p class="muted">None transaction available.</p>';
+    return `\n    <div class="table-wrap">\n      <table class="data-table">\n        <thead>\n          <tr>\n            <th>Date</th>\n            <th>Merchant</th>\n            <th>Category</th>\n            <th>Amount</th>\n          </tr>\n        </thead>\n        <tbody>${transactions.map((tx) => `\n        <tr>\n          <td>${tx.date}</td>\n          <td>${escapeHtml(tx.merchant)}</td>\n          <td>${escapeHtml(tx.category)}</td>\n          <td class="numeric">${eur.format(tx.amount)}</td>\n        </tr>\n      `).join("")}</tbody>\n      </table>\n    </div>\n  `;
   })(state.transactions || [])}\n      </section>\n    </div>\n  `;
 }
 export function renderLineChart(snapshots) {
   if (!snapshots.length)
-    return '<p class="muted">Storico mensile non disponibile.</p>';
+    return '<p class="muted">Monthly history unavailable.</p>';
   const keys = ["checking_end_balance_eur", "emergency_fund_balance_eur"],
     values = snapshots.flatMap((snapshot) => keys.map((key) => snapshot[key])),
     min = 0.92 * Math.min(...values),
@@ -298,15 +298,15 @@ export function renderLineChart(snapshots) {
           : `<text x="${28 + index * xStep}" y="214" text-anchor="middle">${snapshot.month_label.split(" ")[0]}</text>`,
       )
       .join("");
-  return `\n    <div class="chart-card">\n      <svg viewBox="0 0 640 220" role="img" aria-label="Andamento mensile saldi conto corrente e fondo emergenze">\n        <line class="axis" x1="28" y1="192" x2="612" y2="192"></line>\n        <line class="axis" x1="28" y1="28" x2="28" y2="192"></line>\n        <polyline class="line checking-line" points="${lineFor("checking_end_balance_eur")}"></polyline>\n        <polyline class="line emergency-line" points="${lineFor("emergency_fund_balance_eur")}"></polyline>\n        ${labels}\n      </svg>\n      <div class="chart-legend">\n        <span><i class="legend-dot checking"></i>Conto corrente</span>\n        <span><i class="legend-dot emergency"></i>Fondo emergenze</span>\n      </div>\n    </div>\n  `;
+  return `\n    <div class="chart-card">\n      <svg viewBox="0 0 640 220" role="img" aria-label="Monthly trend for checking and emergency-fund balances">\n        <line class="axis" x1="28" y1="192" x2="612" y2="192"></line>\n        <line class="axis" x1="28" y1="28" x2="28" y2="192"></line>\n        <polyline class="line checking-line" points="${lineFor("checking_end_balance_eur")}"></polyline>\n        <polyline class="line emergency-line" points="${lineFor("emergency_fund_balance_eur")}"></polyline>\n        ${labels}\n      </svg>\n      <div class="chart-legend">\n        <span><i class="legend-dot checking"></i>Checking account</span>\n        <span><i class="legend-dot emergency"></i>Emergency fund</span>\n      </div>\n    </div>\n  `;
 }
 export function renderUser(state) {
   (($("user-name").textContent =
     `${state.user.first_name} ${state.user.last_name}`),
     ($("auth-level").textContent =
       "mfa_verified" === state.user.auth_level
-        ? "Contesto MFA caricato"
-        : "Contesto standard"));
+        ? "MFA context loaded"
+        : "Standard context"));
 }
 export function renderGoal(state) {
   const goal = state.user_goal || {},
@@ -326,21 +326,21 @@ export function renderGoal(state) {
       );
     })(projection),
     statusTitle = behindPlan
-      ? "Sei in ritardo sul ritmo richiesto"
-      : "Sei allineato al piano",
+      ? "You are behind the required pace"
+      : "You are on track",
     statusSummary = (function (projection, behindPlan) {
       const currentMonthly = eur.format(
         projection.historical_monthly_savings || 0,
       ),
         requiredMonthly = eur.format(projection.required_monthly_savings || 0),
-        targetLabel = projection.target_label || "la data obiettivo";
+        targetLabel = projection.target_label || "the target date";
       if (behindPlan)
-        return `Al ritmo storico stai versando ${currentMonthly}/mese, ma per arrivare entro ${targetLabel} servono ${requiredMonthly}/mese.`;
-      return `Il ritmo storico copre il piano richiesto di ${requiredMonthly}/mese.`;
+        return `At the historical pace you are contributing ${currentMonthly}/month, but to arrive by ${targetLabel} you need ${requiredMonthly}/month.`;
+      return `The historical pace covers the required plan of ${requiredMonthly}/month.`;
     })(projection, behindPlan);
   setHtml(
     "goal-summary",
-    `\n    <div class="goal-grid">\n      <div class="goal-progress-card">\n        <span>${escapeHtml(goal.description || "Costruire il fondo emergenze.")}</span>\n        <strong>${eur.format(projection.current_balance || 0)} / ${eur.format(projection.target_balance || 0)}</strong>\n        <div class="goal-progress-bar">\n          <span style="width:${Math.min(projection.current_progress || 0, 100)}%"></span>\n        </div>\n        <small>${projection.current_progress || 0}% completato · gap ${eur.format(projection.gap || 0)}</small>\n      </div>\n      ${goalMetric("Data obiettivo", projection.target_label)}\n      ${goalMetric("Al ritmo attuale", projection.historical_eta_label)}\n      ${goalMetric("Necessario da oggi", `${eur.format(projection.required_monthly_savings || 0)} / mese`)}\n    </div>\n    <div class="goal-timeline">\n      <div>\n        <span>Media storica rilevata</span>\n        <strong>${eur.format(projection.historical_monthly_savings || 0)} / mese</strong>\n      </div>\n      <div>\n        <span>Gap rimanente</span>\n        <strong>${eur.format(projection.gap || 0)}</strong>\n      </div>\n      <div>\n        <span>Obiettivo</span>\n        <strong>${eur.format(projection.target_balance || 0)}</strong>\n      </div>\n    </div>\n    <div class="goal-status ${behindPlan ? "behind" : "aligned"}">\n      <strong>${statusTitle}</strong>\n      <p>${escapeHtml(statusSummary)}</p>\n      <span>${escapeHtml(projection.agent_timeline_note || "")}</span>\n    </div>\n  `,
+    `\n    <div class="goal-grid">\n      <div class="goal-progress-card">\n        <span>${escapeHtml(goal.description || "Build the emergency fund.")}</span>\n        <strong>${eur.format(projection.current_balance || 0)} / ${eur.format(projection.target_balance || 0)}</strong>\n        <div class="goal-progress-bar">\n          <span style="width:${Math.min(projection.current_progress || 0, 100)}%"></span>\n        </div>\n        <small>${projection.current_progress || 0}% complete · gap ${eur.format(projection.gap || 0)}</small>\n      </div>\n      ${goalMetric("Target date", projection.target_label)}\n      ${goalMetric("At current pace", projection.historical_eta_label)}\n      ${goalMetric("Required from today", `${eur.format(projection.required_monthly_savings || 0)} / month`)}\n    </div>\n    <div class="goal-timeline">\n      <div>\n        <span>Observed historical average</span>\n        <strong>${eur.format(projection.historical_monthly_savings || 0)} / month</strong>\n      </div>\n      <div>\n        <span>Remaining gap</span>\n        <strong>${eur.format(projection.gap || 0)}</strong>\n      </div>\n      <div>\n        <span>Goal</span>\n        <strong>${eur.format(projection.target_balance || 0)}</strong>\n      </div>\n    </div>\n    <div class="goal-status ${behindPlan ? "behind" : "aligned"}">\n      <strong>${statusTitle}</strong>\n      <p>${escapeHtml(statusSummary)}</p>\n      <span>${escapeHtml(projection.agent_timeline_note || "")}</span>\n    </div>\n  `,
   );
 }
 export function renderAgentInbox(ctx) {
@@ -358,7 +358,7 @@ export function renderAgentInbox(ctx) {
       : currentProposal.recommended_action;
   setHtml(
     "agent-inbox",
-    `\n    <article class="inbox-proposal ${executed ? "completed" : "pending"}">\n      <button class="inbox-summary" type="button" onclick="toggleActionInbox()" aria-expanded="${expanded}">\n        <span class="route-pill ${routeClass(currentProposal.route)}">${route}</span>\n        <span>\n          <strong>${escapeHtml(currentProposal.title)}</strong>\n          <small>${escapeHtml(amountCopy)}</small>\n        </span>\n        <span class="inbox-chevron">${expanded ? "Riduci" : "Apri"}</span>\n      </button>\n      ${expanded
+    `\n    <article class="inbox-proposal ${executed ? "completed" : "pending"}">\n      <button class="inbox-summary" type="button" onclick="toggleActionInbox()" aria-expanded="${expanded}">\n        <span class="route-pill ${routeClass(currentProposal.route)}">${route}</span>\n        <span>\n          <strong>${escapeHtml(currentProposal.title)}</strong>\n          <small>${escapeHtml(amountCopy)}</small>\n        </span>\n        <span class="inbox-chevron">${expanded ? "Collapse" : "Open"}</span>\n      </button>\n      ${expanded
       ? `\n            <div class="inbox-detail">\n              ${executed
         ? executedAccountStateHtml(ctx)
         : (function (ctx) {
@@ -412,12 +412,12 @@ export function renderAgentInbox(ctx) {
                   checkingMovement >= 0 ? "increase" : "decrease",
                 emergencyDirection =
                   emergencyMovement >= 0 ? "increase" : "decrease";
-              return `\n    <div class="simulation-block">\n      <div class="panel-heading compact">\n        <div>\n          <p class="eyebrow">Impatto proposta</p>\n        </div>\n        <button class="secondary small" type="button" onclick="toggleImpactPanel()" aria-expanded="${impactOpen}">\n          ${impactOpen ? "Riduci" : "Apri"}\n        </button>\n      </div>\n      ${impactOpen ? `\n            <div class="transition-table" role="table" aria-label="Impatto della proposta sui saldi">\n              <div class="transition-row transition-head" role="row">\n                <span>Indicatore</span>\n                <span>Prima</span>\n                <span>Movimento</span>\n                <span>Dopo</span>\n              </div>\n              ${transitionRow({ label: "Conto corrente", note: "Saldo disponibile", before: eur.format(checking.available_balance), movement: formatSignedCurrency(checkingMovement), after: eur.format(checkingAfter), direction: checkingDirection })}\n              ${transitionRow({ label: "Margine dopo spese note", note: `${eur.format(upcoming)} gia pianificati nei prossimi 30 giorni`, before: eur.format(beforeExpenseBuffer), movement: formatSignedCurrency(checkingMovement), after: eur.format(afterExpenseBuffer), direction: afterExpenseBuffer >= 0 ? "safe" : "risk", afterBadge: afterExpenseBuffer >= 0 ? `Copre le spese previste di ${eur.format(upcoming)}` : "Spese previste non coperte" })}\n              ${transitionRow({ label: "Fondo emergenze", note: `Obiettivo ${eur.format(emergency.target_balance)}`, before: eur.format(emergency.balance), movement: formatSignedCurrency(emergencyMovement), after: eur.format(emergencyAfter), direction: emergencyDirection })}\n              ${transitionRow({ label: "Avanzamento obiettivo", note: "Copertura fondo emergenze", before: `${progress}%`, movement: currentProposal.already_executed ? "0 pp" : formatSignedPoints(currentProposal.projected_goal_progress - progress), after: `${currentProposal.projected_goal_progress}%`, direction: currentProposal.projected_goal_progress >= progress ? "increase" : "decrease" })}\n            </div>\n            <div class="transition-context">\n              <div>\n                <span>Ultimo stipendio rilevato</span>\n                <strong>${eur.format(currentProposal.salary_detected.amount)}</strong>\n                <small>${currentProposal.salary_detected.merchant} · ${currentProposal.salary_detected.date}</small>\n              </div>\n              <div>\n                <span>Spese note considerate</span>\n                <strong>${eur.format(upcoming)}</strong>\n                <small>Pagamenti pianificati nel ledger</small>\n              </div>\n            </div>\n          ` : ""}\n    </div>\n  `;
+              return `\n    <div class="simulation-block">\n      <div class="panel-heading compact">\n        <div>\n          <p class="eyebrow">Proposal impact</p>\n        </div>\n        <button class="secondary small" type="button" onclick="toggleImpactPanel()" aria-expanded="${impactOpen}">\n          ${impactOpen ? "Collapse" : "Open"}\n        </button>\n      </div>\n      ${impactOpen ? `\n            <div class="transition-table" role="table" aria-label="Proposal impact on balances">\n              <div class="transition-row transition-head" role="row">\n                <span>Indicator</span>\n                <span>Before</span>\n                <span>Movement</span>\n                <span>After</span>\n              </div>\n              ${transitionRow({ label: "Checking account", note: "Available balance", before: eur.format(checking.available_balance), movement: formatSignedCurrency(checkingMovement), after: eur.format(checkingAfter), direction: checkingDirection })}\n              ${transitionRow({ label: "Margin after known expenses", note: `${eur.format(upcoming)} already planned over the next 30 days`, before: eur.format(beforeExpenseBuffer), movement: formatSignedCurrency(checkingMovement), after: eur.format(afterExpenseBuffer), direction: afterExpenseBuffer >= 0 ? "safe" : "risk", afterBadge: afterExpenseBuffer >= 0 ? `Covers expected expenses of ${eur.format(upcoming)}` : "Expected expenses not covered" })}\n              ${transitionRow({ label: "Emergency fund", note: `Goal ${eur.format(emergency.target_balance)}`, before: eur.format(emergency.balance), movement: formatSignedCurrency(emergencyMovement), after: eur.format(emergencyAfter), direction: emergencyDirection })}\n              ${transitionRow({ label: "Goal progress", note: "Emergency-fund coverage", before: `${progress}%`, movement: currentProposal.already_executed ? "0 pp" : formatSignedPoints(currentProposal.projected_goal_progress - progress), after: `${currentProposal.projected_goal_progress}%`, direction: currentProposal.projected_goal_progress >= progress ? "increase" : "decrease" })}\n            </div>\n            <div class="transition-context">\n              <div>\n                <span>Latest detected salary</span>\n                <strong>${eur.format(currentProposal.salary_detected.amount)}</strong>\n                <small>${currentProposal.salary_detected.merchant} · ${currentProposal.salary_detected.date}</small>\n              </div>\n              <div>\n                <span>Known expenses considered</span>\n                <strong>${eur.format(upcoming)}</strong>\n                <small>Scheduled payments in the ledger</small>\n              </div>\n            </div>\n          ` : ""}\n    </div>\n  `;
             })(ctx)
             : ""
             }\n    ${isExecutable
               ? (function (currentProposal) {
-                return `\n    <div class="decision-card inline">\n      <label for="amount-input" id="amount-label">Importo trasferimento</label>\n      <div class="amount-control" id="amount-control">\n        <input id="amount-input" type="number" min="0" step="50" value="${currentProposal.amount}" oninput="scheduleAmountPreview()" />\n      </div>\n      <div class="decision-actions">\n        <button id="approve-button" type="button" onclick="approveTransfer()">Approva</button>\n        <button id="reject-button" type="button" class="ghost" onclick="rejectProposal()">Rifiuta</button>\n      </div>\n    </div>\n  `;
+                return `\n    <div class="decision-card inline">\n      <label for="amount-input" id="amount-label">Transfer amount</label>\n      <div class="amount-control" id="amount-control">\n        <input id="amount-input" type="number" min="0" step="50" value="${currentProposal.amount}" oninput="scheduleAmountPreview()" />\n      </div>\n      <div class="decision-actions">\n        <button id="approve-button" type="button" onclick="approveTransfer()">Approve</button>\n        <button id="reject-button" type="button" class="ghost" onclick="rejectProposal()">Reject</button>\n      </div>\n    </div>\n  `;
               })(currentProposal)
               : ""
             }\n  `;
@@ -433,15 +433,15 @@ export function renderCustomerResult(trace) {
     duplicate = "DUPLICATE" === trace.tool_result.status,
     className = executed ? "ok" : "blocked",
     title = executed
-      ? "Trasferimento completato"
+      ? "Transfer completed"
       : duplicate
-        ? "Operazione gia eseguita"
-        : "MFA richiesta",
+        ? "Operation already executed"
+        : "MFA required",
     copy = executed
-      ? `${executedTransferCopy(trace.proposal, eur)} e registrati nel database.`
+      ? `${executedTransferCopy(trace.proposal, eur)} and recorded in the database.`
       : duplicate
-        ? "La richiesta usa un identificativo operativo gia consumato. Nessun nuovo movimento e stato creato."
-        : "Questo importo richiede una conferma piu forte prima dell'esecuzione. Nessun denaro e stato spostato.";
+        ? "The request uses an operation ID that has already been consumed. No new movement was created."
+        : "This amount requires stronger confirmation before execution. No money was moved.";
   setHtml(
     "customer-result",
     `\n    <div class="result-box ${className}">\n      <strong>${title}</strong>\n      <p>${copy}</p>\n    </div>\n  `,
@@ -450,7 +450,7 @@ export function renderCustomerResult(trace) {
 export function renderRejectedProposal() {
   setHtml(
     "customer-result",
-    '\n    <div class="result-box blocked">\n      <strong>Proposta rifiutata</strong>\n      <p>Nessuna azione e stata eseguita.</p>\n    </div>\n  ',
+    '\n    <div class="result-box blocked">\n      <strong>Proposal rejected</strong>\n      <p>No action was executed.</p>\n    </div>\n  ',
   );
 }
 export function updateApproveButton({
@@ -468,14 +468,14 @@ export function updateApproveButton({
       proposalUiState(currentProposal, lastTrace) === PROPOSAL_EXECUTED;
   ((button.disabled = transferInFlight || executed || blocked || nonExecutable),
     executed
-      ? (button.textContent = "Gia eseguito")
+      ? (button.textContent = "Already executed")
       : nonExecutable
-        ? (button.textContent = "Da rivedere")
+        ? (button.textContent = "Needs review")
         : "BLOCKED" === currentProposal.route
-          ? (button.textContent = "Bloccato")
+          ? (button.textContent = "Blocked")
           : "STEP_UP_REQUIRED" === currentProposal.route
-            ? (button.textContent = "Conferma MFA")
-            : (button.textContent = "Approva"));
+            ? (button.textContent = "Confirm MFA")
+            : (button.textContent = "Approve"));
 }
 function executedAccountStateHtml(ctx) {
   const {
@@ -493,7 +493,7 @@ function executedAccountStateHtml(ctx) {
     progress = Math.round((emergency.balance / emergency.target_balance) * 100),
     trace = executedTrace(currentProposal, lastTrace),
     amount = executedAmount(currentProposal, lastTrace);
-  return `\n    <div class="executed-state">\n      <div class="success-banner">\n        <strong>✅ OPERAZIONE DI RISPARMIO COMPLETATA CON SUCCESSO.</strong>\n        <span>Trasferimento di ${eur.format(amount)} registrato in SQLite.</span>\n      </div>\n      <div class="executed-grid">\n        ${executedMetric("Conto corrente", "Saldo disponibile aggiornato", eur.format(checking.available_balance || checking.balance))}\n        ${executedMetric("Fondo emergenze", `${progress}% di ${eur.format(emergency.target_balance)}`, eur.format(emergency.balance))}\n        ${executedMetric("✓ Margine di Sicurezza", "Copre le spese dei prossimi 30gg", eur.format(margin))}\n        ${executedMetric("Piano obiettivo", `Tempo stimato al target: ${projection.historical_eta_months || "-"} mesi`, `Contributo mensile residuo necessario: ${eur.format(projection.required_monthly_savings || 0)} / mese`)}\n      </div>\n      <p class="executed-note">Trace ID: ${escapeHtml(trace?.trace_id || currentProposal.trace_id || "-")}. I saldi sono letti dallo stato SQLite aggiornato, non da una simulazione.</p>\n    </div>\n  `;
+  return `\n    <div class="executed-state">\n      <div class="success-banner">\n        <strong>✅ SAVINGS OPERATION COMPLETED SUCCESSFULLY.</strong>\n        <span>Transfer of ${eur.format(amount)} recorded in SQLite.</span>\n      </div>\n      <div class="executed-grid">\n        ${executedMetric("Checking account", "Updated available balance", eur.format(checking.available_balance || checking.balance))}\n        ${executedMetric("Emergency fund", `${progress}% of ${eur.format(emergency.target_balance)}`, eur.format(emergency.balance))}\n        ${executedMetric("Safety margin", "Covers expenses for the next 30 days", eur.format(margin))}\n        ${executedMetric("Goal plan", `Estimated time to target: ${projection.historical_eta_months || "-"} months`, `Remaining required monthly contribution: ${eur.format(projection.required_monthly_savings || 0)} / month`)}\n      </div>\n      <p class="executed-note">Trace ID: ${escapeHtml(trace?.trace_id || currentProposal.trace_id || "-")}. Balances are read from updated SQLite state, not from a simulation.</p>\n    </div>\n  `;
 }
 function executedMetric(title, subtitle, value) {
   return `\n    <div class="executed-metric">\n      <span>${escapeHtml(title)}</span>\n      <strong>${escapeHtml(value)}</strong>\n      <small>${escapeHtml(subtitle)}</small>\n    </div>\n  `;
@@ -517,14 +517,14 @@ export function renderInspector({ inspectorOpen: inspectorOpen }) {
     document.body.classList.toggle("inspector-open", inspectorOpen));
   const toggle = $("sandbox-toggle");
   toggle &&
-    ((toggle.textContent = "⚙️ Imposta Sandbox"),
+    ((toggle.textContent = "⚙️ Sandbox Settings"),
       toggle.setAttribute("aria-expanded", String(inspectorOpen)));
 }
 export function renderFinancialRulesSettings(currentProposal) {
   const target = $("financial-rules-settings");
   if (!target) return;
   const rules = currentProposal.financial_rules || {};
-  target.innerHTML = `\n    <div class="rule-setting">\n      <div>\n        <strong>Imposta limite di rischio dinamico</strong>\n        <span>Valore corrente: ${eur.format(rules.autonomous_transfer_limit_eur || 0)}. Sopra questa soglia il trasferimento richiede MFA.</span>\n      </div>\n      <div class="rule-setting-control">\n        <input id="risk-limit-input" type="number" min="1" step="50" value="${Number(rules.autonomous_transfer_limit_eur || 0)}" />\n        <button type="button" class="secondary" onclick="saveRiskLimit()">Salva limite</button>\n      </div>\n    </div>\n  `;
+  target.innerHTML = `\n    <div class="rule-setting">\n      <div>\n        <strong>Set dynamic risk limit</strong>\n        <span>Current value: ${eur.format(rules.autonomous_transfer_limit_eur || 0)}. Above this threshold, the transfer requires MFA.</span>\n      </div>\n      <div class="rule-setting-control">\n        <input id="risk-limit-input" type="number" min="1" step="50" value="${Number(rules.autonomous_transfer_limit_eur || 0)}" />\n        <button type="button" class="secondary" onclick="saveRiskLimit()">Save limit</button>\n      </div>\n    </div>\n  `;
 }
 export function renderSandboxControls({
   currentProposal: currentProposal,
@@ -551,13 +551,13 @@ export function renderSandboxResult(result) {
   if (!target) return;
   if (!result) return void (target.innerHTML = "");
   const ok = "SANDBOX_STATE_INJECTED" === result?.status;
-  target.innerHTML = `\n    <div class="result-box ${ok ? "ok" : "blocked"}">\n      <strong>${ok ? "Stato sandbox applicato" : "Mutazione non valida"}</strong>\n      <p>${ok ? `Checking ${eur.format(result.checking_balance)}, fondo emergenze ${eur.format(result.emergency_balance)}, spese note ${eur.format(result.upcoming_expenses)}.` : escapeHtml(result?.reason || "Impossibile applicare la mutazione.")}</p>\n    </div>\n  `;
+  target.innerHTML = `\n    <div class="result-box ${ok ? "ok" : "blocked"}">\n      <strong>${ok ? "Sandbox state applied" : "Invalid mutation"}</strong>\n      <p>${ok ? `Checking ${eur.format(result.checking_balance)}, emergency fund ${eur.format(result.emergency_balance)}, known expenses ${eur.format(result.upcoming_expenses)}.` : escapeHtml(result?.reason || "Unable to apply the mutation.")}</p>\n    </div>\n  `;
 }
 export function updateSandboxButton(sandboxInFlight) {
   const button = $("sandbox-apply-button");
   button &&
     ((button.disabled = sandboxInFlight),
       (button.textContent = sandboxInFlight
-        ? "Applicazione..."
-        : "Applica mutazione di stato"));
+        ? "Applying..."
+        : "Apply state mutation"));
 }

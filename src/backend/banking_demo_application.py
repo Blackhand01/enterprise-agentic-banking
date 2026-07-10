@@ -1,4 +1,4 @@
-"""Application facade for the Part A banking demo."""
+"""Application facade for the banking demo."""
 
 from __future__ import annotations
 
@@ -45,8 +45,8 @@ except ImportError:  # Allows direct script-style imports during prototyping.
     from storage.sqlite_banking_store import SQLiteBankingStore
 
 
-class PartABankingDemoApplication:
-    """Coordinates API use cases for the deliverable Part A prototype."""
+class BankingDemoApplication:
+    """Coordinates API use cases for the banking demo prototype."""
 
     def __init__(self, data_dir: str | Path) -> None:
         self.data_dir = Path(data_dir)
