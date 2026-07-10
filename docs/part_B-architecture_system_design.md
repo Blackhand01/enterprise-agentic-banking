@@ -2,7 +2,7 @@
 
 ## Agentic Banking Experience
 
-The prototype explores a banking app where the AI agent becomes the customer's primary interface, but not the direct authority over money. The demonstrated flow is narrow on purpose: after salary arrives, the agent detects idle liquidity, checks known expenses and the `Emergency_Fund` goal, proposes a transfer, asks for approval, executes only after authorization, and records the trace.
+The prototype explores a banking app where the AI agent becomes the customer's primary interface, but not the direct authority over money. The demonstrated flow is narrow on purpose: when a relevant event changes the customer's accounts, balances, or available funds, the agent evaluates the new state against the active customer goal. In this prototype, that goal is reaching the target level for `Emergency_Fund`: the agent detects idle liquidity, checks known expenses, proposes a transfer, asks for approval, executes only after authorization, and records the trace.
 
 The production design is built around one principle: **separate reasoning from control**. The model can interpret intent, retrieve context, and explain a proposed action. Deterministic services decide whether that action is allowed, requires approval, needs MFA, requires co-approval, or must be blocked.
 

@@ -40,18 +40,17 @@ Only one key is required; if more than one is present, the backend auto-selects 
 
 ## Quick Start
 
-Use the `Makefile` as the operational entry point.
+Use the `Makefile` as the operational entry point. It creates an isolated `.venv`
+inside the project and always starts the app with that same environment, so local
+Python tools installed elsewhere on the machine do not affect the demo.
 
-Recommended first run from a clean machine:
+### First Run From The Zip
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+cd enterprise-agentic-banking
 make setup
 make run
 ```
-
-Python 3.11 is recommended for the demo environment.
 
 Then open:
 
@@ -59,26 +58,101 @@ Then open:
 http://127.0.0.1:8000
 ```
 
-For later runs, activate the same virtual environment and start the app:
+Prerequisites:
+
+- Python 3.11 or newer available as `python3`
+- `make` available in the terminal
+- A modern browser
+
+If `python3` points to a different interpreter than the one you want, pass it
+explicitly:
 
 ```bash
-source .venv/bin/activate
+make setup PYTHON=/path/to/python3
 make run
 ```
 
-If your Python environment already has the dependencies installed, `make run` is enough. The `setup` target simply runs `pip install -r requirements.txt` in the active Python environment; it does not create a virtual environment for you.
+### Without Make
 
-The Makefile uses the active Python interpreter for both installation and startup (`python3 -m uvicorn`). If `make run` reports missing dependencies, run `make setup` in the same activated environment and then retry `make run`.
+These commands are equivalent and are useful on machines without `make`:
+
+macOS/Linux:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m uvicorn src.backend.api_server:app --host 127.0.0.1 --port 8000
+```
+
+Windows PowerShell:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m uvicorn src.backend.api_server:app --host 127.0.0.1 --port 8000
+```
+
+### Later Runs
+
+After `make setup` has completed once:
+
+```bash
+make run
+```
+
+If port `8000` is busy:
+
+```bash
+PORT=8001 make run
+```
+
+Then open `http://127.0.0.1:8001`.
+
+### Optional LLM Chat
+
+The dashboard, recommendation, approval, execution, reset, and audit flows run with
+local data only. The contextual chat becomes available when at least one LLM API key
+is present in `.env` or in the shell environment. To configure it:
+
+```bash
+cp .env.example .env
+```
+
+Then set one provider key in `.env`. If no key is configured, only the chat reports
+that the assistant is unavailable; the rest of the prototype still works.
 
 Useful commands:
 
 ```bash
 make help
+make doctor
+make smoke
+make reset-data
+make package
+make stop
 ```
 
-The Makefile contains setup, run, dev, smoke-test, reset, docs, stop, restart, compile, and clean commands.
+`make doctor` prints which Python interpreter the Makefile will use. `make smoke`
+runs the backend/API and frontend syntax checks used for a quick local verification.
 
-LLM configuration is optional. Without an API key, the dashboard, proposal flow, guardrails, approval, execution, and audit trail still work; only the contextual chat reports that the AI assistant is unavailable.
+The generated SQLite database and audit log are local demo state. Use
+`make reset-data` to restore the seeded scenario.
+
+### Preparing The Submission Zip
+
+To create a clean folder archive for review:
+
+```bash
+make package
+```
+
+The zip is written to `dist/enterprise-agentic-banking.zip`. It excludes `.git`,
+`.venv`, `.env`, Python caches, and generated SQLite files, while keeping the
+prototype source, seed JSON, README, assessment docs, and prebuilt HTML files.
 
 ## Try This
 

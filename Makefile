@@ -1,18 +1,24 @@
-.PHONY: help setup run dev docs stop restart smoke reset-audit reset-data compile clean check-port
+.PHONY: help setup run dev docs stop restart smoke reset-audit reset-data compile clean check-port check-deps doctor package
 
 PORT ?= 8000
 HOST ?= 127.0.0.1
 APP ?= src.backend.api_server:app
-UVICORN ?= uvicorn
-PYTHON ?= $(shell if python3 -m pip show fastapi >/dev/null 2>&1; then command -v python3; elif command -v $(UVICORN) >/dev/null 2>&1; then uvicorn_path=`command -v $(UVICORN)`; sed -n '1s/^\#!//p' "$$uvicorn_path"; else echo python3; fi)
+PYTHON ?= python3
+VENV ?= .venv
+VENV_PYTHON := $(VENV)/bin/python
+RUN_PYTHON := $(shell if [ -x "$(VENV_PYTHON)" ]; then echo "$(VENV_PYTHON)"; else command -v $(PYTHON) 2>/dev/null || echo $(PYTHON); fi)
+DIST_DIR ?= dist
+DIST_NAME ?= enterprise-agentic-banking
 
 help:
 	@echo "Enterprise Agentic Banking Prototype"
 	@echo ""
 	@echo "Commands:"
-	@echo "  make setup        Install Python dependencies"
+	@echo "  make setup        Create .venv and install Python dependencies"
 	@echo "  make run          Start the Part A prototype at http://$(HOST):$(PORT)"
 	@echo "  make dev          Start with uvicorn reload enabled"
+	@echo "  make doctor       Show the Python environment used by Make"
+	@echo "  make package      Build a clean zip under $(DIST_DIR)/"
 	@echo "  make docs         Regenerate Part B and Part C HTML versions"
 	@echo "  make stop         Stop the process listening on $(HOST):$(PORT)"
 	@echo "  make restart      Stop and restart the prototype"
@@ -31,13 +37,30 @@ check-port:
 	fi
 
 setup:
-	$(PYTHON) -m pip install -r requirements.txt
+	$(PYTHON) -m venv $(VENV)
+	$(VENV_PYTHON) -m pip install --upgrade pip
+	$(VENV_PYTHON) -m pip install -r requirements.txt
 
-run: check-port
-	$(UVICORN) $(APP) --host $(HOST) --port $(PORT)
+check-deps:
+	@$(RUN_PYTHON) -c "import fastapi, uvicorn" >/dev/null 2>&1 || { \
+		echo "Python dependencies are missing for $(RUN_PYTHON)."; \
+		echo "Run: make setup"; \
+		exit 1; \
+	}
 
-dev: check-port
-	$(UVICORN) $(APP) --host $(HOST) --port $(PORT) --reload
+doctor:
+	@echo "Base Python: $$(command -v $(PYTHON) 2>/dev/null || echo 'not found')"
+	@echo "Run Python:  $(RUN_PYTHON)"
+	@$(RUN_PYTHON) --version
+	@$(RUN_PYTHON) -m pip show fastapi uvicorn >/dev/null 2>&1 && \
+		echo "Dependencies: installed" || \
+		echo "Dependencies: missing; run 'make setup'"
+
+run: check-port check-deps
+	$(RUN_PYTHON) -m uvicorn $(APP) --host $(HOST) --port $(PORT)
+
+dev: check-port check-deps
+	$(RUN_PYTHON) -m uvicorn $(APP) --host $(HOST) --port $(PORT) --reload
 
 docs:
 	pandoc docs/part_B-architecture_system_design.md \
@@ -87,21 +110,37 @@ stop:
 restart: stop
 	$(MAKE) run
 
-smoke:
-	find src/backend -name "*.py" -print0 | xargs -0 $(PYTHON) -m py_compile
+smoke: check-deps
+	find src/backend -name "*.py" -print0 | xargs -0 $(RUN_PYTHON) -m py_compile
 	node --check src/frontend/app.js
 	node scripts/ui-state-smoke.js
-	$(PYTHON) scripts/smoke.py
+	$(RUN_PYTHON) scripts/smoke.py
 
 reset-audit:
 	@printf '[]\n' > src/bank_data/audit_log.json
 	@echo "audit log reset"
 
 reset-data:
-	$(PYTHON) -c "from src.backend.api_server import service; service.reset_data(); service.reset_audit(); print('SQLite database reset')"
+	$(RUN_PYTHON) -c "from src.backend.api_server import service; service.reset_data(); service.reset_audit(); print('SQLite database reset')"
 
 compile:
-	find src/backend -name "*.py" -print0 | xargs -0 $(PYTHON) -m py_compile
+	find src/backend -name "*.py" -print0 | xargs -0 $(RUN_PYTHON) -m py_compile
+
+package:
+	rm -rf $(DIST_DIR)/$(DIST_NAME) $(DIST_DIR)/$(DIST_NAME).zip
+	mkdir -p $(DIST_DIR)
+	rsync -a ./ $(DIST_DIR)/$(DIST_NAME)/ \
+		--exclude .git \
+		--exclude .venv \
+		--exclude .env \
+		--exclude __pycache__ \
+		--exclude '*.pyc' \
+		--exclude '.DS_Store' \
+		--exclude '$(DIST_DIR)' \
+		--exclude 'src/bank_data/*.db' \
+		--exclude 'src/bank_data/*.db-*'
+	cd $(DIST_DIR) && zip -qr $(DIST_NAME).zip $(DIST_NAME)
+	@echo "Created $(DIST_DIR)/$(DIST_NAME).zip"
 
 clean:
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +

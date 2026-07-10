@@ -278,10 +278,13 @@ and System Design</h1>
 <h2 id="agentic-banking-experience">Agentic Banking Experience</h2>
 <p>The prototype explores a banking app where the AI agent becomes the
 customer’s primary interface, but not the direct authority over money.
-The demonstrated flow is narrow on purpose: after salary arrives, the
-agent detects idle liquidity, checks known expenses and the
-<code>Emergency_Fund</code> goal, proposes a transfer, asks for
-approval, executes only after authorization, and records the trace.</p>
+The demonstrated flow is narrow on purpose: when a relevant event
+changes the customer’s accounts, balances, or available funds, the agent
+evaluates the new state against the active customer goal. In this
+prototype, that goal is reaching the target level for
+<code>Emergency_Fund</code>: the agent detects idle liquidity, checks
+known expenses, proposes a transfer, asks for approval, executes only
+after authorization, and records the trace.</p>
 <p>The production design is built around one principle: <strong>separate
 reasoning from control</strong>. The model can interpret intent,
 retrieve context, and explain a proposed action. Deterministic services
