@@ -9,7 +9,6 @@ except ImportError:
     from storage.sqlite_banking_store import SQLiteBankingStore
 
 try:
-    from .agent_inbox_read_model import build_agent_inbox_items
     from .cashflow_forecast_read_model import CashflowForecastReadModel
     from .customer_emergency_goal import (
         add_months,
@@ -21,7 +20,6 @@ try:
         EmergencyFundGoalProjectionReadModel,
     )
 except ImportError:
-    from agent_inbox_read_model import build_agent_inbox_items
     from cashflow_forecast_read_model import CashflowForecastReadModel
     from customer_emergency_goal import (
         add_months,
@@ -43,6 +41,28 @@ __all__ = [
     "default_user_goal",
     "month_label",
 ]
+
+
+def build_agent_inbox_items(proposal: dict[str, Any]) -> list[dict[str, Any]]:
+    status = "completed" if proposal.get("already_executed") else "pending_approval"
+    if proposal["route"] == "BLOCKED":
+        status = "blocked"
+
+    return [
+        {
+            "id": proposal["proposal_id"],
+            "title": proposal["title"],
+            "summary": proposal["recommended_action"],
+            "status": status,
+            "route": proposal["route"],
+            "required_next_step": proposal["required_next_step"],
+            "evidence": {
+                "known_expenses_30d": proposal["upcoming_expenses_30d"],
+                "projected_checking_balance": proposal["projected_checking_balance"],
+                "projected_emergency_balance": proposal["projected_emergency_balance"],
+            },
+        }
+    ]
 
 
 class CustomerDashboardReadModelBuilder:

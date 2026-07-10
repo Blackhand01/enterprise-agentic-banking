@@ -1,30 +1,42 @@
 # Backend Module Map
 
-Questa cartella e organizzata per responsabilita funzionale, non per tipo tecnico generico.
+Questa cartella è organizzata per responsabilità funzionale. Il principio guida è separare dati verificati, intelligenza deterministica, orchestrazione LLM, workflow applicativi e boundary API.
 
-| Path | Responsabilita | Cosa contiene |
+## Mappa Moduli
+
+| Path | Responsabilità | Cosa contiene |
 | --- | --- | --- |
-| `main.py` | API boundary | FastAPI routes, request schema e static frontend mount. |
-| `part_a_banking_demo_application.py` | Application facade | Wiring delle dipendenze e use case esposti alle API. |
-| `storage/` | System of record locale | Repository SQLite, schema, seed/reset, transazioni reali, idempotenza. |
-| `intelligence/` | Bank intelligence deterministica | Planner delle proposte, formule obiettivo, read model, cashflow forecast. |
-| `application/` | Workflow mutativi | Trasferimenti approvati dal cliente, sandbox state injection, audit trace. |
-| `agentic_system/` | LLM orchestration | Agent provider-agnostic, prompt, tool schema, retrieval policy e guardrail LLM/tool. |
-| `observability/` | Auditability | Audit log append-only JSON per demo e pannello AI Engineering. |
+| `api_server.py` | API boundary | FastAPI routes, request schema, mount del frontend statico. |
+| `banking_demo_application.py` | Application facade | Wiring delle dipendenze e use case esposti alle API. |
+| `storage/` | System of record locale | SQLite, schema, seed/reset, query read-only, comandi write, idempotenza. |
+| `intelligence/` | Bank intelligence deterministica | Planner fondo emergenze, formule cashflow, read model, explainability e proposal payload. |
+| `application/` | Workflow applicativi | Dashboard state, chat service, approval workflow, audit JSON, env/trace helpers. |
+| `agentic_system/` | LLM orchestration | Agent provider-agnostic, prompt/policy support, tool schema, retrieval semantico, guardrail. |
 
 ## Lettura Consigliata
 
-1. `main.py` per vedere le API esposte.
-2. `part_a_banking_demo_application.py` per capire come sono collegati i componenti.
-3. `intelligence/emergency_fund_recommendation_planner.py` per la raccomandazione.
-4. `intelligence/emergency_fund_goal_projection_read_model.py` per l'obiettivo.
-5. `intelligence/cashflow_forecast_read_model.py` per il cashflow.
-6. `storage/sqlite_banking_store.py` per il facade dello storage.
-7. `storage/internal_transfer_command.py` per il trasferimento reale.
-8. `storage/sandbox_state_command.py` per la mutazione controllata dei dati demo.
-9. `application/customer_transfer_approval_workflow.py` per approvazione/esecuzione.
-10. `agentic_system/agent.py` per il loop LLM + tool calling.
+1. `api_server.py`: API REST esposte al frontend.
+2. `banking_demo_application.py`: composizione dei servizi.
+3. `storage/sqlite_banking_store.py`: facciata del database locale.
+4. `storage/customer_banking_read_store.py`: query su saldi, transazioni, scheduled payments e snapshot.
+5. `storage/customer_banking_write_store.py`: comandi mutativi.
+6. `storage/transfer_commands.py`: trasferimenti interni con idempotenza.
+7. `storage/commands.py`: helper condivisi e sandbox state injection.
+8. `intelligence/emergency_fund_recommendation_planner.py`: selezione del piano e proposta agentica.
+9. `intelligence/emergency_fund_planning_math.py`: calcoli cashflow, buffer e anti-oscillazione.
+10. `intelligence/emergency_fund_proposal_payload.py`: payload proposta, evidence e reasoning trace.
+11. `intelligence/read_models.py`: facade dei read model dashboard.
+12. `application/services.py`: audit trail e approval workflow.
+13. `application/customer_services.py`: dashboard state builder e customer chat service.
+14. `agentic_system/agent.py`: loop LLM + tool calling.
+15. `agentic_system/tools.py`: tool locali validati che leggono/scrivono sullo store.
+16. `agentic_system/guardrails.py`: route di rischio e sanitizzazione output.
 
-## Regola Architetturale
+## Confini Architetturali
 
-Il modello linguistico non e il system of record e non decide la safety. Saldi, esecuzione, idempotenza, route di rischio e formule finanziarie sono implementati in codice deterministico e ispezionabile.
+- Il modello linguistico non è il system of record.
+- Saldi, transazioni e stato operativo arrivano da SQLite tramite `storage/`.
+- Le proposte finanziarie sono calcolate in `intelligence/`, non inventate dal modello.
+- I trasferimenti passano da tool schema, guardrail, approvazione e idempotenza.
+- L'audit della demo è JSON locale tramite `JsonAuditTrail` in `application/services.py`.
+- La sandbox modifica solo lo stato demo locale, non simula autenticazione reale o core banking reale.

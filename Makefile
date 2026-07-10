@@ -2,7 +2,7 @@
 
 PORT ?= 8000
 HOST ?= 127.0.0.1
-APP ?= src.backend.main:app
+APP ?= src.backend.api_server:app
 
 help:
 	@echo "Prototipo Enterprise Agentic Banking"
@@ -96,7 +96,7 @@ reset-audit:
 	@echo "audit log reimpostato"
 
 reset-data:
-	python3 -c "from src.backend.main import service; service.reset_data(); service.reset_audit(); print('database SQLite reimpostato')"
+	python3 -c "from src.backend.api_server import service; service.reset_data(); service.reset_audit(); print('database SQLite reimpostato')"
 
 compile:
 	find src/backend -name "*.py" -print0 | xargs -0 python3 -m py_compile

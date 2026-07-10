@@ -35,12 +35,12 @@ function reasoningFactHtml(fact) {
   return "Route rischio" === fact.label
     ? ""
     : `\n    <span>\n      ${escapeHtml(fact.label)}\n      <strong>${escapeHtml(
-        (function (fact) {
-          return "EUR" === fact.unit
-            ? eur.format(Number(fact.value || 0))
-            : (fact.value ?? "-");
-        })(fact),
-      )}</strong>\n    </span>\n  `;
+      (function (fact) {
+        return "EUR" === fact.unit
+          ? eur.format(Number(fact.value || 0))
+          : (fact.value ?? "-");
+      })(fact),
+    )}</strong>\n    </span>\n  `;
 }
 export function renderSupervisorCashflow({
   state: state,
@@ -57,8 +57,8 @@ export function renderSupervisorCashflow({
       currentProposal: currentProposal,
     }) {
       const available = Number(
-          checking?.available_balance || checking?.balance || 0,
-        ),
+        checking?.available_balance || checking?.balance || 0,
+      ),
         expenses = Number(forecast.known_expenses_total || 0);
       if (available <= 0 && expenses <= 0)
         return '<p class="muted">Liquidità conto corrente non disponibile.</p>';
@@ -132,7 +132,7 @@ export function renderChatToolCard(toolResult) {
   const node = document.createElement("div");
   if (
     ((node.className = "message assistant tool-card"),
-    !toolResult.transactions.length)
+      !toolResult.transactions.length)
   ) {
     node.classList.add("empty");
     const query = toolResult.search_query || toolResult.category || "richiesta";
@@ -167,58 +167,58 @@ export function renderDeepDive({ state: state, deepDiveOpen: deepDiveOpen }) {
     content = $("deep-dive-content");
   (toggle &&
     ((toggle.textContent = "Storico azioni agente"),
-    toggle.setAttribute("aria-expanded", String(deepDiveOpen))),
+      toggle.setAttribute("aria-expanded", String(deepDiveOpen))),
     panel &&
-      (panel.classList.toggle("open", deepDiveOpen),
+    (panel.classList.toggle("open", deepDiveOpen),
       panel.setAttribute("aria-hidden", deepDiveOpen ? "false" : "true")),
     content.classList.toggle("open", deepDiveOpen),
     (content.innerHTML = deepDiveOpen
       ? `\n    <div class="source-note">Qui trovi solo le azioni agente registrate e il relativo audit trail.</div>\n    ${(function (
-          auditEvents,
-        ) {
-          if (!auditEvents.length)
-            return '<p class="muted">Nessuna azione agente registrata in questa sessione.</p>';
-          return `\n    <div class="audit-list">\n      ${auditEvents
-            .map((event) =>
-              (function (event) {
-                const title = (function (title) {
-                    return (
-                      String(title)
-                        .replace(/^[^\p{L}\p{N}]+/u, "")
-                        .trim() || "Azione agente"
-                    );
-                  })(event.proposal?.title || "Azione agente"),
-                  status =
-                    event.tool_result?.status ||
-                    event.proposal?.route ||
-                    "Registrata",
-                  amount = Number(
-                    event.tool_result?.amount || event.proposal?.amount || 0,
-                  ),
-                  amountCopy = amount > 0 ? ` · ${eur.format(amount)}` : "",
-                  layers = (event.layer_events || [])
-                    .slice(0, 5)
-                    .map(
-                      (item) =>
-                        `\n        <span>\n          <strong>${escapeHtml(item.layer)}</strong>\n          ${escapeHtml(item.event)}\n        </span>\n      `,
-                    )
-                    .join("");
-                return `\n    <article class="audit-item">\n      <span>${escapeHtml(
-                  (function (timestamp) {
-                    if (!timestamp) return "Timestamp non disponibile";
-                    const parsed = new Date(timestamp);
-                    return Number.isNaN(parsed.getTime())
-                      ? timestamp
-                      : parsed.toLocaleString("it-IT", {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        });
-                  })(event.timestamp),
-                )}</span>\n      <strong>${escapeHtml(title)}</strong>\n      <small>${escapeHtml(event.trace_id || "trace non disponibile")} · ${escapeHtml(status)}${amountCopy}</small>\n      ${layers ? `<div class="audit-layer-list">${layers}</div>` : ""}\n    </article>\n  `;
-              })(event),
-            )
-            .join("")}\n    </div>\n  `;
-        })(state.audit || [])}\n  `
+        auditEvents,
+      ) {
+        if (!auditEvents.length)
+          return '<p class="muted">Nessuna azione agente registrata in questa sessione.</p>';
+        return `\n    <div class="audit-list">\n      ${auditEvents
+          .map((event) =>
+            (function (event) {
+              const title = (function (title) {
+                return (
+                  String(title)
+                    .replace(/^[^\p{L}\p{N}]+/u, "")
+                    .trim() || "Azione agente"
+                );
+              })(event.proposal?.title || "Azione agente"),
+                status =
+                  event.tool_result?.status ||
+                  event.proposal?.route ||
+                  "Registrata",
+                amount = Number(
+                  event.tool_result?.amount || event.proposal?.amount || 0,
+                ),
+                amountCopy = amount > 0 ? ` · ${eur.format(amount)}` : "",
+                layers = (event.layer_events || [])
+                  .slice(0, 5)
+                  .map(
+                    (item) =>
+                      `\n        <span>\n          <strong>${escapeHtml(item.layer)}</strong>\n          ${escapeHtml(item.event)}\n        </span>\n      `,
+                  )
+                  .join("");
+              return `\n    <article class="audit-item">\n      <span>${escapeHtml(
+                (function (timestamp) {
+                  if (!timestamp) return "Timestamp non disponibile";
+                  const parsed = new Date(timestamp);
+                  return Number.isNaN(parsed.getTime())
+                    ? timestamp
+                    : parsed.toLocaleString("it-IT", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    });
+                })(event.timestamp),
+              )}</span>\n      <strong>${escapeHtml(title)}</strong>\n      <small>${escapeHtml(event.trace_id || "trace non disponibile")} · ${escapeHtml(status)}${amountCopy}</small>\n      ${layers ? `<div class="audit-layer-list">${layers}</div>` : ""}\n    </article>\n  `;
+            })(event),
+          )
+          .join("")}\n    </div>\n  `;
+      })(state.audit || [])}\n  `
       : ""));
 }
 export function renderInsights({ state: state, insightsOpen: insightsOpen }) {
@@ -228,12 +228,12 @@ export function renderInsights({ state: state, insightsOpen: insightsOpen }) {
   if (
     (toggle &&
       ((toggle.textContent = "Insights"),
-      toggle.setAttribute("aria-expanded", String(insightsOpen))),
-    panel &&
+        toggle.setAttribute("aria-expanded", String(insightsOpen))),
+      panel &&
       (panel.classList.toggle("open", insightsOpen),
-      panel.setAttribute("aria-hidden", insightsOpen ? "false" : "true")),
-    content.classList.toggle("open", insightsOpen),
-    !insightsOpen)
+        panel.setAttribute("aria-hidden", insightsOpen ? "false" : "true")),
+      content.classList.toggle("open", insightsOpen),
+      !insightsOpen)
   )
     return void (content.innerHTML = "");
   const snapshots = state.monthly_snapshots || [];
@@ -243,12 +243,12 @@ export function renderInsights({ state: state, insightsOpen: insightsOpen }) {
     if (!snapshots.length)
       return '<p class="muted">Storico mensile non disponibile.</p>';
     const categories = [
-        ["rent_eur", "Affitto", "rent"],
-        ["utilities_eur", "Bollette", "utilities"],
-        ["groceries_eur", "Spesa", "groceries"],
-        ["sport_eur", "Sport", "sport"],
-        ["discretionary_eur", "Discrezionali", "discretionary"],
-      ],
+      ["rent_eur", "Affitto", "rent"],
+      ["utilities_eur", "Bollette", "utilities"],
+      ["groceries_eur", "Spesa", "groceries"],
+      ["sport_eur", "Sport", "sport"],
+      ["discretionary_eur", "Discrezionali", "discretionary"],
+    ],
       totals = snapshots.map((snapshot) =>
         categories.reduce((sum, [key]) => sum + snapshot[key], 0),
       ),
@@ -330,8 +330,8 @@ export function renderGoal(state) {
       : "Sei allineato al piano",
     statusSummary = (function (projection, behindPlan) {
       const currentMonthly = eur.format(
-          projection.historical_monthly_savings || 0,
-        ),
+        projection.historical_monthly_savings || 0,
+      ),
         requiredMonthly = eur.format(projection.required_monthly_savings || 0),
         targetLabel = projection.target_label || "la data obiettivo";
       if (behindPlan)
@@ -345,10 +345,10 @@ export function renderGoal(state) {
 }
 export function renderAgentInbox(ctx) {
   const {
-      currentProposal: currentProposal,
-      lastTrace: lastTrace,
-      actionInboxOpen: actionInboxOpen,
-    } = ctx,
+    currentProposal: currentProposal,
+    lastTrace: lastTrace,
+    actionInboxOpen: actionInboxOpen,
+  } = ctx,
     executed =
       proposalUiState(currentProposal, lastTrace) === PROPOSAL_EXECUTED,
     expanded = actionInboxOpen || executed,
@@ -358,76 +358,72 @@ export function renderAgentInbox(ctx) {
       : currentProposal.recommended_action;
   setHtml(
     "agent-inbox",
-    `\n    <article class="inbox-proposal ${executed ? "completed" : "pending"}">\n      <button class="inbox-summary" type="button" onclick="toggleActionInbox()" aria-expanded="${expanded}">\n        <span class="route-pill ${routeClass(currentProposal.route)}">${route}</span>\n        <span>\n          <strong>${escapeHtml(currentProposal.title)}</strong>\n          <small>${escapeHtml(amountCopy)}</small>\n        </span>\n        <span class="inbox-chevron">${expanded ? "Riduci" : "Apri"}</span>\n      </button>\n      ${
-      expanded
-        ? `\n            <div class="inbox-detail">\n              ${
-            executed
-              ? executedAccountStateHtml(ctx)
-              : (function (ctx) {
-                  const { currentProposal: currentProposal } = ctx,
-                    isExecutable = ["TRANSFER", "TRANSFER_REVERSE"].includes(
-                      currentProposal.action_type,
-                    ),
-                    reasoningHtml = agentReasoningPanelHtml(
-                      currentProposal,
-                      ctx.explainabilityOpen,
-                    );
-                  return `\n    ${reasoningHtml}\n    ${
-                    isExecutable
-                      ? (function (ctx) {
-                          const {
-                            currentProposal: currentProposal,
-                            findAccount: findAccount,
-                            impactOpen: impactOpen,
-                            lastTrace: lastTrace,
-                          } = ctx;
-                          if (
-                            proposalUiState(currentProposal, lastTrace) ===
-                            PROPOSAL_EXECUTED
-                          )
-                            return executedAccountStateHtml(ctx);
-                          const checking = findAccount("Checking"),
-                            emergency = findAccount("Emergency_Fund"),
-                            progress = Math.round(
-                              (emergency.balance / emergency.target_balance) *
-                                100,
-                            ),
-                            upcoming = currentProposal.upcoming_expenses_30d,
-                            checkingAfter =
-                              currentProposal.projected_checking_balance,
-                            emergencyAfter =
-                              currentProposal.projected_emergency_balance,
-                            beforeExpenseBuffer =
-                              checking.available_balance - upcoming,
-                            afterExpenseBuffer = checkingAfter - upcoming,
-                            movementAmount = currentProposal.already_executed
-                              ? 0
-                              : currentProposal.amount,
-                            checkingMovement =
-                              "TRANSFER_REVERSE" === currentProposal.action_type
-                                ? movementAmount
-                                : -movementAmount,
-                            emergencyMovement =
-                              "TRANSFER_REVERSE" === currentProposal.action_type
-                                ? -movementAmount
-                                : movementAmount,
-                            checkingDirection =
-                              checkingMovement >= 0 ? "increase" : "decrease",
-                            emergencyDirection =
-                              emergencyMovement >= 0 ? "increase" : "decrease";
-                          return `\n    <div class="simulation-block">\n      <div class="panel-heading compact">\n        <div>\n          <p class="eyebrow">Impatto proposta</p>\n        </div>\n        <button class="secondary small" type="button" onclick="toggleImpactPanel()" aria-expanded="${impactOpen}">\n          ${impactOpen ? "Riduci" : "Apri"}\n        </button>\n      </div>\n      ${impactOpen ? `\n            <div class="transition-table" role="table" aria-label="Impatto della proposta sui saldi">\n              <div class="transition-row transition-head" role="row">\n                <span>Indicatore</span>\n                <span>Prima</span>\n                <span>Movimento</span>\n                <span>Dopo</span>\n              </div>\n              ${transitionRow({ label: "Conto corrente", note: "Saldo disponibile", before: eur.format(checking.available_balance), movement: formatSignedCurrency(checkingMovement), after: eur.format(checkingAfter), direction: checkingDirection })}\n              ${transitionRow({ label: "Margine dopo spese note", note: `${eur.format(upcoming)} gia pianificati nei prossimi 30 giorni`, before: eur.format(beforeExpenseBuffer), movement: formatSignedCurrency(checkingMovement), after: eur.format(afterExpenseBuffer), direction: afterExpenseBuffer >= 0 ? "safe" : "risk", afterBadge: afterExpenseBuffer >= 0 ? `Copre le spese previste di ${eur.format(upcoming)}` : "Spese previste non coperte" })}\n              ${transitionRow({ label: "Fondo emergenze", note: `Obiettivo ${eur.format(emergency.target_balance)}`, before: eur.format(emergency.balance), movement: formatSignedCurrency(emergencyMovement), after: eur.format(emergencyAfter), direction: emergencyDirection })}\n              ${transitionRow({ label: "Avanzamento obiettivo", note: "Copertura fondo emergenze", before: `${progress}%`, movement: currentProposal.already_executed ? "0 pp" : formatSignedPoints(currentProposal.projected_goal_progress - progress), after: `${currentProposal.projected_goal_progress}%`, direction: currentProposal.projected_goal_progress >= progress ? "increase" : "decrease" })}\n            </div>\n            <div class="transition-context">\n              <div>\n                <span>Ultimo stipendio rilevato</span>\n                <strong>${eur.format(currentProposal.salary_detected.amount)}</strong>\n                <small>${currentProposal.salary_detected.merchant} · ${currentProposal.salary_detected.date}</small>\n              </div>\n              <div>\n                <span>Spese note considerate</span>\n                <strong>${eur.format(upcoming)}</strong>\n                <small>Pagamenti pianificati nel ledger</small>\n              </div>\n            </div>\n          ` : ""}\n    </div>\n  `;
-                        })(ctx)
-                      : ""
-                  }\n    ${
-                    isExecutable
-                      ? (function (currentProposal) {
-                          return `\n    <div class="decision-card inline">\n      <label for="amount-input" id="amount-label">Importo trasferimento</label>\n      <div class="amount-control" id="amount-control">\n        <input id="amount-input" type="number" min="0" step="50" value="${currentProposal.amount}" oninput="scheduleAmountPreview()" />\n      </div>\n      <div class="decision-actions">\n        <button id="approve-button" type="button" onclick="approveTransfer()">Approva</button>\n        <button id="reject-button" type="button" class="ghost" onclick="rejectProposal()">Rifiuta</button>\n      </div>\n    </div>\n  `;
-                        })(currentProposal)
-                      : ""
-                  }\n  `;
-                })(ctx)
-          }\n            </div>\n          `
-        : ""
+    `\n    <article class="inbox-proposal ${executed ? "completed" : "pending"}">\n      <button class="inbox-summary" type="button" onclick="toggleActionInbox()" aria-expanded="${expanded}">\n        <span class="route-pill ${routeClass(currentProposal.route)}">${route}</span>\n        <span>\n          <strong>${escapeHtml(currentProposal.title)}</strong>\n          <small>${escapeHtml(amountCopy)}</small>\n        </span>\n        <span class="inbox-chevron">${expanded ? "Riduci" : "Apri"}</span>\n      </button>\n      ${expanded
+      ? `\n            <div class="inbox-detail">\n              ${executed
+        ? executedAccountStateHtml(ctx)
+        : (function (ctx) {
+          const { currentProposal: currentProposal } = ctx,
+            isExecutable = ["TRANSFER", "TRANSFER_REVERSE"].includes(
+              currentProposal.action_type,
+            ),
+            reasoningHtml = agentReasoningPanelHtml(
+              currentProposal,
+              ctx.explainabilityOpen,
+            );
+          return `\n    ${reasoningHtml}\n    ${isExecutable
+            ? (function (ctx) {
+              const {
+                currentProposal: currentProposal,
+                findAccount: findAccount,
+                impactOpen: impactOpen,
+                lastTrace: lastTrace,
+              } = ctx;
+              if (
+                proposalUiState(currentProposal, lastTrace) ===
+                PROPOSAL_EXECUTED
+              )
+                return executedAccountStateHtml(ctx);
+              const checking = findAccount("Checking"),
+                emergency = findAccount("Emergency_Fund"),
+                progress = Math.round(
+                  (emergency.balance / emergency.target_balance) *
+                  100,
+                ),
+                upcoming = currentProposal.upcoming_expenses_30d,
+                checkingAfter =
+                  currentProposal.projected_checking_balance,
+                emergencyAfter =
+                  currentProposal.projected_emergency_balance,
+                beforeExpenseBuffer =
+                  checking.available_balance - upcoming,
+                afterExpenseBuffer = checkingAfter - upcoming,
+                movementAmount = currentProposal.already_executed
+                  ? 0
+                  : currentProposal.amount,
+                checkingMovement =
+                  "TRANSFER_REVERSE" === currentProposal.action_type
+                    ? movementAmount
+                    : -movementAmount,
+                emergencyMovement =
+                  "TRANSFER_REVERSE" === currentProposal.action_type
+                    ? -movementAmount
+                    : movementAmount,
+                checkingDirection =
+                  checkingMovement >= 0 ? "increase" : "decrease",
+                emergencyDirection =
+                  emergencyMovement >= 0 ? "increase" : "decrease";
+              return `\n    <div class="simulation-block">\n      <div class="panel-heading compact">\n        <div>\n          <p class="eyebrow">Impatto proposta</p>\n        </div>\n        <button class="secondary small" type="button" onclick="toggleImpactPanel()" aria-expanded="${impactOpen}">\n          ${impactOpen ? "Riduci" : "Apri"}\n        </button>\n      </div>\n      ${impactOpen ? `\n            <div class="transition-table" role="table" aria-label="Impatto della proposta sui saldi">\n              <div class="transition-row transition-head" role="row">\n                <span>Indicatore</span>\n                <span>Prima</span>\n                <span>Movimento</span>\n                <span>Dopo</span>\n              </div>\n              ${transitionRow({ label: "Conto corrente", note: "Saldo disponibile", before: eur.format(checking.available_balance), movement: formatSignedCurrency(checkingMovement), after: eur.format(checkingAfter), direction: checkingDirection })}\n              ${transitionRow({ label: "Margine dopo spese note", note: `${eur.format(upcoming)} gia pianificati nei prossimi 30 giorni`, before: eur.format(beforeExpenseBuffer), movement: formatSignedCurrency(checkingMovement), after: eur.format(afterExpenseBuffer), direction: afterExpenseBuffer >= 0 ? "safe" : "risk", afterBadge: afterExpenseBuffer >= 0 ? `Copre le spese previste di ${eur.format(upcoming)}` : "Spese previste non coperte" })}\n              ${transitionRow({ label: "Fondo emergenze", note: `Obiettivo ${eur.format(emergency.target_balance)}`, before: eur.format(emergency.balance), movement: formatSignedCurrency(emergencyMovement), after: eur.format(emergencyAfter), direction: emergencyDirection })}\n              ${transitionRow({ label: "Avanzamento obiettivo", note: "Copertura fondo emergenze", before: `${progress}%`, movement: currentProposal.already_executed ? "0 pp" : formatSignedPoints(currentProposal.projected_goal_progress - progress), after: `${currentProposal.projected_goal_progress}%`, direction: currentProposal.projected_goal_progress >= progress ? "increase" : "decrease" })}\n            </div>\n            <div class="transition-context">\n              <div>\n                <span>Ultimo stipendio rilevato</span>\n                <strong>${eur.format(currentProposal.salary_detected.amount)}</strong>\n                <small>${currentProposal.salary_detected.merchant} · ${currentProposal.salary_detected.date}</small>\n              </div>\n              <div>\n                <span>Spese note considerate</span>\n                <strong>${eur.format(upcoming)}</strong>\n                <small>Pagamenti pianificati nel ledger</small>\n              </div>\n            </div>\n          ` : ""}\n    </div>\n  `;
+            })(ctx)
+            : ""
+            }\n    ${isExecutable
+              ? (function (currentProposal) {
+                return `\n    <div class="decision-card inline">\n      <label for="amount-input" id="amount-label">Importo trasferimento</label>\n      <div class="amount-control" id="amount-control">\n        <input id="amount-input" type="number" min="0" step="50" value="${currentProposal.amount}" oninput="scheduleAmountPreview()" />\n      </div>\n      <div class="decision-actions">\n        <button id="approve-button" type="button" onclick="approveTransfer()">Approva</button>\n        <button id="reject-button" type="button" class="ghost" onclick="rejectProposal()">Rifiuta</button>\n      </div>\n    </div>\n  `;
+              })(currentProposal)
+              : ""
+            }\n  `;
+        })(ctx)
+      }\n            </div>\n          `
+      : ""
     }\n    </article>\n  `,
   );
 }
@@ -483,11 +479,11 @@ export function updateApproveButton({
 }
 function executedAccountStateHtml(ctx) {
   const {
-      state: state,
-      currentProposal: currentProposal,
-      findAccount: findAccount,
-      lastTrace: lastTrace,
-    } = ctx,
+    state: state,
+    currentProposal: currentProposal,
+    findAccount: findAccount,
+    lastTrace: lastTrace,
+  } = ctx,
     checking = findAccount("Checking"),
     emergency = findAccount("Emergency_Fund"),
     projection = state.emergency_goal_projection || {},
@@ -522,7 +518,7 @@ export function renderInspector({ inspectorOpen: inspectorOpen }) {
   const toggle = $("sandbox-toggle");
   toggle &&
     ((toggle.textContent = "⚙️ Imposta Sandbox"),
-    toggle.setAttribute("aria-expanded", String(inspectorOpen)));
+      toggle.setAttribute("aria-expanded", String(inspectorOpen)));
 }
 export function renderFinancialRulesSettings(currentProposal) {
   const target = $("financial-rules-settings");
@@ -545,10 +541,10 @@ export function renderSandboxControls({
     ((checkingInput.value = Number(
       checking?.available_balance || checking?.balance || 0,
     )),
-    (emergencyInput.value = Number(emergency?.balance || 0)),
-    (upcomingInput.value = Number(
-      currentProposal?.upcoming_expenses_30d || 0,
-    )));
+      (emergencyInput.value = Number(emergency?.balance || 0)),
+      (upcomingInput.value = Number(
+        currentProposal?.upcoming_expenses_30d || 0,
+      )));
 }
 export function renderSandboxResult(result) {
   const target = $("sandbox-result");
@@ -561,7 +557,7 @@ export function updateSandboxButton(sandboxInFlight) {
   const button = $("sandbox-apply-button");
   button &&
     ((button.disabled = sandboxInFlight),
-    (button.textContent = sandboxInFlight
-      ? "Applicazione..."
-      : "Applica mutazione di stato"));
+      (button.textContent = sandboxInFlight
+        ? "Applicazione..."
+        : "Applica mutazione di stato"));
 }

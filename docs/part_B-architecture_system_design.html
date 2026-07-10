@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Parte B - Architettura e System Design</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f7f3;
+      --paper: #ffffff;
+      --text: #1d2430;
+      --muted: #5d6675;
+      --line: #d8dde6;
+      --accent: #0b6bcb;
+      --code: #f0f3f7;
+    }
+
+    body {
+      margin: 0 auto;
+      max-width: 980px;
+      padding: 48px 24px 72px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.2;
+      color: #111827;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 2.3rem;
+    }
+
+    h2 {
+      margin-top: 2.3rem;
+      border-top: 1px solid var(--line);
+      padding-top: 1.4rem;
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0 1.5rem;
+      background: var(--paper);
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 0.7rem 0.8rem;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef3f8;
+    }
+
+    code {
+      border-radius: 4px;
+      background: var(--code);
+      padding: 0.08rem 0.25rem;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 0.94em;
+    }
+
+    pre {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      padding: 1rem;
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+    }
+
+    blockquote {
+      margin-left: 0;
+      border-left: 4px solid var(--accent);
+      padding-left: 1rem;
+      color: var(--muted);
+    }
+
+    .mermaid {
+      background: var(--paper);
+      text-align: center;
+    }
+  </style>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true, theme: "default", securityLevel: "loose" });
+  </script>
+</head>
+<body>
+<h1 id="parte-b---architettura-e-system-design">Parte B - Architettura e
+System Design</h1>
+<h2 id="agentic-banking-experience">Agentic Banking Experience</h2>
+<p>Il prototipo dimostra una banking app in cui un agente AI diventa
+l’interfaccia primaria per il cliente, senza diventare autorità diretta
+sui sistemi core della banca.</p>
+<p>Flow dimostrato: dopo l’arrivo dello stipendio, l’agente rileva
+liquidità inattiva, controlla uscite previste e obiettivo
+<code>Emergency_Fund</code>, propone un trasferimento, chiede
+approvazione, simula l’esecuzione e registra l’audit trail.</p>
+<p>La scelta architetturale centrale è separare il “pensare” dal “fare”:
+il modello può ragionare e proporre; autorizzazione, policy ed
+esecuzione restano deterministiche, testabili e auditabili.</p>
+<h2 id="obiettivi-di-design">1. Obiettivi di design</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Obiettivo</th>
+<th>Significato</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Accuratezza</td>
+<td>I fatti finanziari arrivano dai systems of record, non dalla memoria
+del modello.</td>
+</tr>
+<tr>
+<td>Controllo</td>
+<td>L’agente usa solo tool registrati, tipizzati e autorizzati.</td>
+</tr>
+<tr>
+<td>Sicurezza</td>
+<td>Un layer deterministico decide allow, approval, step-up o
+block.</td>
+</tr>
+<tr>
+<td>Auditability</td>
+<td>Proposte, decisioni, approvazioni, tool call ed esiti sono
+ricostruibili.</td>
+</tr>
+<tr>
+<td>Evolvibilità</td>
+<td>Nuove capability si aggiungono via registry e policy, non
+riscrivendo l’agente.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="architettura-di-riferimento">2. Architettura di riferimento</h2>
+<pre class="mermaid">
+flowchart LR
+  UI[Customer App]
+  AGENT[AI Agent]
+  CONTEXT[Bank Context]
+  SAFETY[Safety and Approval]
+  ACTION[Banking Action Gateway]
+  BANK[Bank Systems]
+  AUDIT[(Audit Log)]
+
+  UI --&gt;|request / approval| AGENT
+  AGENT --&gt;|needs facts| CONTEXT
+  CONTEXT --&gt;|verified context| AGENT
+  AGENT --&gt;|proposal| SAFETY
+  SAFETY --&gt;|ask / block| UI
+  SAFETY --&gt;|approved action| ACTION
+  ACTION --&gt;|execute| BANK
+  BANK --&gt;|result| ACTION
+  ACTION --&gt;|confirmation| UI
+  AGENT --&gt; AUDIT
+  SAFETY --&gt; AUDIT
+  ACTION --&gt; AUDIT
+</pre>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Blocco</th>
+<th>Responsabilità</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Customer App</code></td>
+<td>Esperienza cliente, approvazioni, spiegazioni, fonti e audit
+leggibile.</td>
+</tr>
+<tr>
+<td><code>AI Agent</code></td>
+<td>Interpreta l’intento, usa contesto verificato e produce una proposta
+strutturata.</td>
+</tr>
+<tr>
+<td><code>Bank Context</code></td>
+<td>Espone dati cliente, read model e policy versionate.</td>
+</tr>
+<tr>
+<td><code>Safety and Approval</code></td>
+<td>Valuta rischio, soglie, step-up, co-approvazione e blocchi.</td>
+</tr>
+<tr>
+<td><code>Banking Action Gateway</code></td>
+<td>Esegue solo azioni validate e autorizzate, con idempotenza.</td>
+</tr>
+<tr>
+<td><code>Bank Systems</code></td>
+<td>Systems of record: core banking, ledger, payments, cards, customer
+data.</td>
+</tr>
+<tr>
+<td><code>Audit Log</code></td>
+<td>Trace immutabile per customer explanation, operations ed
+evaluation.</td>
+</tr>
+</tbody>
+</table>
+<p>Il confine critico è tra <code>Safety and Approval</code> e
+<code>Banking Action Gateway</code>: nessuna azione con effetti reali
+raggiunge i sistemi bancari senza verifica e autorizzazione.</p>
+<h2 id="runtime-flow">3. Runtime flow</h2>
+<pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant UI as Customer App
+  participant A as AI Agent
+  participant C as Bank Context
+  participant S as Safety and Approval
+  participant G as Banking Action Gateway
+  participant B as Bank Systems
+  participant L as Audit Log
+
+  A-&gt;&gt;C: Recupera saldo, uscite previste, obiettivi e policy
+  C--&gt;&gt;A: Contesto verificato
+  A-&gt;&gt;S: Propone trasferimento verso saving pot
+  S--&gt;&gt;UI: Richiede approvazione cliente
+  UI--&gt;&gt;S: Approvato
+  S-&gt;&gt;G: Azione autorizzata
+  G-&gt;&gt;B: Esegue con idempotency key
+  B--&gt;&gt;G: Esito operazione
+  G--&gt;&gt;UI: Conferma esecuzione
+  A-&gt;&gt;L: Proposta e contesto
+  S-&gt;&gt;L: Decisione e approvazione
+  G-&gt;&gt;L: Tool call ed esito
+</pre>
+<p>Lo stesso pattern copre altre capability: blocco carta, annullamento
+abbonamento, pagamento fattura o modifica budget cambiano tool e policy,
+non architettura.</p>
+<h2 id="autonomia-e-controllo-umano">4. Autonomia e controllo umano</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Livello</th>
+<th>Tipo di azione</th>
+<th>Esempio</th>
+<th>Route</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Informativa</td>
+<td>“Quanto ho speso in sport?”</td>
+<td>Risposta grounded.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Basso rischio e reversibile</td>
+<td>Ricategorizzare una transazione</td>
+<td>Esegue se la policy cliente lo consente.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Medio rischio</td>
+<td>Spostare una piccola somma verso saving pot esistente</td>
+<td>Chiede approvazione.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Alto rischio, nuovo o irreversibile</td>
+<td>Nuovo beneficiario, importo elevato, chiusura conto</td>
+<td>Step-up, co-approval o human-only.</td>
+</tr>
+</tbody>
+</table>
+<p>Il rischio non è solo importo. Il policy engine considera
+reversibilità, pattern storici, destinazione, account ownership,
+preferenze cliente, classe del tool e freschezza dei dati.</p>
+<h2 id="grounding">5. Grounding</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tipo di dato</th>
+<th>Fonte</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Saldi, transazioni, pending, obiettivi, beneficiari</td>
+<td>API bancarie e read model strutturati</td>
+<td>Fonte di verità per numeri e stato operativo.</td>
+</tr>
+<tr>
+<td>Policy, procedure, prodotti, vincoli interni</td>
+<td>Repository documentali versionati</td>
+<td>Retrieval semantico e spiegazioni operative.</td>
+</tr>
+</tbody>
+</table>
+<p>Il RAG è utile per policy e knowledge base. Non deve essere fonte per
+saldi, importi o stato di esecuzione.</p>
+<p>L’orchestratore passa al modello un contesto minimo:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;customer_context&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;available_balance&quot;</span><span class="fu">:</span> <span class="fl">4250.0</span><span class="fu">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;currency&quot;</span><span class="fu">:</span> <span class="st">&quot;EUR&quot;</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;upcoming_expenses_30d&quot;</span><span class="fu">:</span> <span class="fl">1520.0</span><span class="fu">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;emergency_fund&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;target&quot;</span><span class="fu">:</span> <span class="fl">10000.0</span><span class="fu">,</span> <span class="dt">&quot;current&quot;</span><span class="fu">:</span> <span class="fl">3000.0</span><span class="fu">},</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;autonomy_preferences&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;savings_transfer_requires_approval_above&quot;</span><span class="fu">:</span> <span class="fl">100.0</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;allowed_tools&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;transfer_to_savings_pot&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;instruction&quot;</span><span class="fu">:</span> <span class="st">&quot;Propose at most one action. Do not invent missing facts.&quot;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>L’audit conserva query dati, versioni documentali e input effettivo
+usato per la proposta.</p>
+<h2 id="tool-registry-ed-esecuzione">6. Tool registry ed esecuzione</h2>
+<p>Ogni tool dichiara schema, risk class, reversibilità, dry-run,
+idempotenza e approval policy.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;transfer_to_savings_pot&quot;</span><span class="fu">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;input_schema&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;source_account_id&quot;</span><span class="fu">:</span> <span class="st">&quot;string&quot;</span><span class="fu">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;target_pot_id&quot;</span><span class="fu">:</span> <span class="st">&quot;string&quot;</span><span class="fu">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;amount&quot;</span><span class="fu">:</span> <span class="st">&quot;decimal&quot;</span><span class="fu">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;currency&quot;</span><span class="fu">:</span> <span class="st">&quot;EUR&quot;</span><span class="fu">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;reason&quot;</span><span class="fu">:</span> <span class="st">&quot;string&quot;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;risk_class&quot;</span><span class="fu">:</span> <span class="st">&quot;medium&quot;</span><span class="fu">,</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;reversible&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;supports_dry_run&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;idempotency_required&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;approval_policy&quot;</span><span class="fu">:</span> <span class="st">&quot;decided_by_policy_engine&quot;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<pre class="mermaid">
+flowchart LR
+  PROPOSAL[Agent Proposal]
+  CHECK[Validate and Authorize]
+  ACTION[Banking Action Gateway]
+  BANK[Bank Systems]
+  AUDIT[Audit Log]
+
+  PROPOSAL --&gt; CHECK
+  CHECK --&gt;|approved| ACTION
+  ACTION --&gt; BANK
+  ACTION --&gt; AUDIT
+</pre>
+<p>Per aggiungere una capability servono adapter, contratto tool,
+policy, stati UI, audit schema ed eval cases. L’agente scopre vincoli e
+tool dal registry.</p>
+<h2 id="policy-and-risk-engine">7. Policy and Risk Engine</h2>
+<p>Il risk engine riceve input strutturati e restituisce una route
+spiegabile:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;action&quot;</span><span class="fu">:</span> <span class="st">&quot;transfer_to_savings_pot&quot;</span><span class="fu">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;amount&quot;</span><span class="fu">:</span> <span class="fl">300.0</span><span class="fu">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;risk_class&quot;</span><span class="fu">:</span> <span class="st">&quot;medium&quot;</span><span class="fu">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;reversible&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;is_existing_target&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;customer_preference&quot;</span><span class="fu">:</span> <span class="st">&quot;approval_required_above_100&quot;</span><span class="fu">,</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;route&quot;</span><span class="fu">:</span> <span class="st">&quot;ask_approval&quot;</span><span class="fu">,</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;reason_codes&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;amount_above_customer_autonomy_limit&quot;</span><span class="ot">,</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;money_movement&quot;</span><span class="ot">,</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;reversible_action&quot;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>La route controlla sia il backend sia la UI: allow, approval,
+step-up, co-approval, block o human review.</p>
+<h2 id="auditability-ed-explainability">8. Auditability ed
+explainability</h2>
+<pre class="mermaid">
+flowchart TD
+  TRACE[Trace ID]
+  INTENT[Intent / Trigger]
+  CONTEXT[Grounded Context References]
+  PLAN[Structured Plan]
+  POLICY[Risk Decision]
+  APPROVAL[Approval Evidence]
+  TOOL[Tool Call]
+  RESULT[Execution Result]
+  EXPLAIN[Customer Explanation]
+
+  TRACE --&gt; INTENT
+  TRACE --&gt; CONTEXT
+  TRACE --&gt; PLAN
+  TRACE --&gt; POLICY
+  TRACE --&gt; APPROVAL
+  TRACE --&gt; TOOL
+  TRACE --&gt; RESULT
+  TRACE --&gt; EXPLAIN
+</pre>
+<p>Il cliente vede dati usati, impatto previsto, motivo
+dell’approvazione ed esito. Engineering e operations vedono il trace
+completo. La domanda “perché l’agente ha fatto questo?” deve essere
+rispondibile dal trace, non dal modello a posteriori.</p>
+<h2 id="reliability-safety-e-operations">9. Reliability, safety e
+operations</h2>
+<p>Il sistema fallisce in modo conservativo.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Failure mode</th>
+<th>Comportamento</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Timeout modello</td>
+<td>Fallback; nessuna esecuzione.</td>
+</tr>
+<tr>
+<td>Dati finanziari mancanti</td>
+<td>Non inventa numeri; chiede conferma o rimanda.</td>
+</tr>
+<tr>
+<td>Retrieval incerto</td>
+<td>Non cita policy come fatto certo; escalation se necessario.</td>
+</tr>
+<tr>
+<td>Verifier mismatch</td>
+<td>Blocca prima di approval o execution.</td>
+</tr>
+<tr>
+<td>Risk engine non disponibile</td>
+<td>Fail closed.</td>
+</tr>
+<tr>
+<td>Approval scaduta</td>
+<td>Richiede nuovo approval token.</td>
+</tr>
+<tr>
+<td>Timeout core banking</td>
+<td>Retry solo con idempotency key; stato pending se serve.</td>
+</tr>
+<tr>
+<td>Richiesta duplicata</td>
+<td>Idempotenza contro doppia esecuzione.</td>
+</tr>
+</tbody>
+</table>
+<p>Metriche operative: grounded answer rate, tool accuracy, verifier
+pass rate, blocked action rate, false allow rate, approval/rejection
+rate, p95 latency, fallback rate e cost per flow.</p>
+<p>Prima di dare autorità a un nuovo prompt, modello o tool: offline
+eval, casi avversariali, replay storico anonimizzato, shadow mode e
+rollout graduale.</p>
+<h2 id="privacy-autenticazione-e-conti-condivisi">10. Privacy,
+autenticazione e conti condivisi</h2>
+<p>Privacy: minimizzare il contesto passato al modello, redigere campi
+non necessari, isolare tenant e cliente, tenere secret fuori dal prompt
+e centralizzare le chiamate modello.</p>
+<p>Autenticazione: se la route è <code>step_up_required</code>, il
+gateway richiede un approval token valido prima di qualsiasi write.</p>
+<p>Conti condivisi: il policy engine deve modellare chi può vedere,
+approvare, impostare preferenze di autonomia e quando serve
+co-approvazione. In caso di conflitto sceglie la route più
+conservativa.</p>
+<h2 id="roadmap-di-produzione">11. Roadmap di produzione</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Scope</th>
+<th>Scopo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prototype</td>
+<td>Seed mock, SQLite locale, audit panel</td>
+<td>Dimostrare interaction model e control model.</td>
+</tr>
+<tr>
+<td>MVP 1</td>
+<td>Read-only e propose-only</td>
+<td>Valore cliente senza autorità di esecuzione.</td>
+</tr>
+<tr>
+<td>MVP 2</td>
+<td>Azioni reversibili a basso rischio</td>
+<td>Validare registry, policy, audit e rollback.</td>
+</tr>
+<tr>
+<td>MVP 3</td>
+<td>Money movement verso destinazioni fidate</td>
+<td>Introdurre approval, step-up e gateway bancario.</td>
+</tr>
+<tr>
+<td>Production scale</td>
+<td>Più tool, shared accounts, ops console, eval pipeline</td>
+<td>Espandere senza cambiare il core design.</td>
+</tr>
+</tbody>
+</table>
+<p>La prima capability reale non dovrebbe essere un “autonomous banker”
+generico. Partirei da insight di cash-flow e raccomandazioni di
+risparmio, con esecuzione disabilitata o sempre approval-gated.</p>
+</body>
+</html>
